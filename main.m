@@ -5,38 +5,76 @@ p0 = [0, 0, 1];
 % Parameter of output plane
 Z = 1000;
 
-x = 0:0.5:5;        % равномерное распределение
-y = 0:0.5:5;
+x = 0:1:5;        % равномерное распределение
+y = 0:1:5;
 [X, Y] = meshgrid(x, y);
 
-u = rand(1, 10);
-v = rand(1, 10);
+u = rand(1, 20);
+v = rand(1, 20);
 [U, V] = meshgrid(u, v);
 
 % p1
-p1_1 = [U(1,1), V(1,1), Z];
-p1_2 = [U(2,1), V(2,1), Z];
-p1_3 = [U(1,2), V(1,2), Z];
-p1_4 = [U(2,2), V(2,2), Z];
-
-% Normals & orths
-Normals = rand(50, 3);
-N1 = get_orth(Normals(1, :));
+p1 = zeros(50, 3);
+for n = 1:36
+    for i = 1:20
+        for j = 1:20
+            p1(n, :) = [U(i,j), V(i,j), Z];
+        end
+    end
+end
 
 % Angles for 1st plane
-inc_ang1 = angle(N1, p0);
-ref_ang1 = angle(N1, p1_1);
+inc_ang = rand (50, 1);
+ref_ang = rand (50, 1);
+%inc_ang1 = angle(Normals(1, :), p0);
+%ref_ang1 = angle(Normals(1, :), p1_1);
+
+% Normals & orths
+Normals = zeros(50, 3);
+for i = 1:50
+    n1 = 1;
+    n2 = 1.48;
+    Normals(i, :) = get_normal (n1, n2, p0, p1(i, :), inc_ang(i, :), ref_ang(i, :));
+end
+%Normals = rand(50, 3);
+
 
 % Parameter h_0
-h_0 = zeros(50, 1);
-h_0(:, 1) = 10;
+h_0 = 9 + (10-9)* rand (50, 1);
+%h_0 = zeros(50, 1);
+%h_0(:, 1) = 10;
+
+
+%???????
+vol = visual_plane(x, y);
+
+visual_plane ([x(4), 0], [y(4), 0]);
+
+% Array_beam of dist to planes
+% Column i -- beam i, row i -- plane i
+Dist_beam = zeros (50, 36);
+for n = 1:36            % Count of beams
+    for i = 1:6                     
+        for j = 1:6
+            for plane = 1:50
+                z = distance(plane, i, j, h_0(plane), Normals);
+                Dist_beam(plane, n) = z;
+            end
+        end
+    end
+end
+
+Dist_min = zeros(1, 36);
+for n = 1:36
+    Dist_min(1, n) = min (Dist_beam(:, n));
+end
 
 % Min distance & index
 Min = zeros(11, 11);
 Index_plane = zeros(11, 11);
 
-for i = 1:11                      % Count of beams
-    for j = 1:11
+for i = 1:6                      % Count of beams
+    for j = 1:6
         x = X(i, j);
         y = Y(i, j);
         min_dist = 1000000;
@@ -58,7 +96,7 @@ end
 function [ang] = angle (vec1, vec2)
     vec_1 = get_orth(vec1);
     vec_2 = get_orth(vec2);
-    ang = acosd( dot(vec_1, vec_2) / (sqrt(dot(vec_1, vec_1))*sqrt(dot(vec_2, vec_2))) );
+    ang = acosd( dot(vec_1, vec_2) );
 end
 
 % Create orth from a vector
@@ -83,8 +121,6 @@ function [z] = distance(index, x, y, h_0, Normals)
     N1 = Normal_orth(1, 1); 
     N2 = Normal_orth(1, 2);
     N3 = Normal_orth(1, 3);
-    len = sqrt(dot(Normal_orth, Normal_orth));
-    disp(len);
     z = (N3*h_0 - N1*x - N2*y)/N3;
 end
 
@@ -96,4 +132,9 @@ function [d] = evkild_distance(index, x_0, y_0, h_0, Normals)
     N3 = Normal_orth(1, 3);
     len_N = sqrt( dot(Normals(index, :), Normals(index, :)) );
     d = abs(N1*x_0 + N2*y_0 + N3*h_0)/len_N;
+end
+
+% Plane visualising
+function [z] = visual_plane(x, y)
+  z = plot(x, y);  
 end
