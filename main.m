@@ -46,50 +46,54 @@ h_0 = 9 + (10-9)* rand (50, 1);
 
 
 %???????
-vol = visual_plane(x, y);
+%vol = visual_plane(x, y);
 
-visual_plane ([x(4), 0], [y(4), 0]);
+%visual_plane ([x(4), 0], [y(4), 0]);
 
 % Array_beam of dist to planes
 % Column i -- beam i, row i -- plane i
 Dist_beam = zeros (50, 36);
-for n = 1:36            % Count of beams
-    for i = 1:6                     
-        for j = 1:6
-            for plane = 1:50
-                z = distance(plane, i, j, h_0(plane), Normals);
-                Dist_beam(plane, n) = z;
-            end
+
+% Distance & min dist to planes for each beam
+count = 0;
+z = 0;
+for i = 1:6               % Semi count of beams      
+    for j = 1:6
+        count = count + 1;
+        for plane = 1:50
+            z = distance(plane, i, j, h_0(plane), Normals);
+            Dist_beam(plane, count) = z;
         end
-    end
+    end 
 end
+
 
 Dist_min = zeros(1, 36);
 for n = 1:36
     Dist_min(1, n) = min (Dist_beam(:, n));
 end
 
-% Min distance & index
-Min = zeros(11, 11);
-Index_plane = zeros(11, 11);
+% Min distance to planes & index of the current plane
+%Min = zeros(11, 11);
+%Index_plane = zeros(11, 11);
 
-for i = 1:6                      % Count of beams
-    for j = 1:6
-        x = X(i, j);
-        y = Y(i, j);
-        min_dist = 1000000;
-        index_plane = 1;
-        for plane = 1:50
-            z = distance(plane, x, y, h_0(plane), Normals);
-            if z < min_dist
-                min_dist = z;
-                index_plane = plane;
-            end
-        end
-        Min(i, j) = min_dist;
-        Index_plane(i, j) = index_plane;
-    end
-end
+%for i = 1:6                      % Count of beams
+%    for j = 1:6
+%        x = X(i, j);
+%        y = Y(i, j);
+%        min_dist = 1000000;
+%        index_plane = 1;
+%        for plane = 1:50
+%            z = distance(plane, x, y, h_0(plane), Normals);
+%            if z < min_dist
+%                min_dist = z;
+%                index_plane = plane;
+%            end
+%        end
+%        Min(i, j) = min_dist;
+%        Index_plane(i, j) = index_plane;
+%    end
+%end
 %% Functions
 
 % Find angle in degrees between vec1 & vec2
