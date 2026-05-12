@@ -1,107 +1,87 @@
-%% Create planes
+%% Distribution of Energy
 
+%Input data
 p0 = [0, 0, 1];
+Z = 1000;                                         % Parameter of output plane
 
-% Parameter of output plane
-Z = 1000;
+n1 = 1.48;
+n2 = 1;
 
-x = 0:1:5;        % равномерное распределение
-y = 0:1:5;
+x = 0:0.5:2.5;                                      % равномерное распределение
+y = 0:0.5:2.5;
 [X, Y] = meshgrid(x, y);
+inc_beams = length(x)*length(y)                 % count of incident beams
 
-u = rand(1, 20);
-v = rand(1, 20);
+u = 0:1:7;
+v = 0:1:7;
 [U, V] = meshgrid(u, v);
+refr_beams = length(u)*length(v)                % count of refracted beams
 
-% p1
-p1 = zeros(50, 3);
-for n = 1:36
-    for i = 1:20
-        for j = 1:20
-            p1(n, :) = [U(i,j), V(i,j), Z];
-        end
+h_0 = 9 + (10-9)* rand (50, 1);                 % Parameter h_0 - count of planes
+
+p1 = zeros(refr_beams, 3);                      % p1
+for i = 0 : length(u)-1
+    for j = 0 : length(v)-1
+        p1(i * length(v) + j + 1, :) = [U(i+1, j+1), V(i+1, j+1), Z];
     end
 end
 
-% Angles for 1st plane
-inc_ang = rand (50, 1);
-ref_ang = rand (50, 1);
-%inc_ang1 = angle(Normals(1, :), p0);
-%ref_ang1 = angle(Normals(1, :), p1_1);
-
 % Normals & orths
 Normals = zeros(50, 3);
-for i = 1:50
-    n1 = 1;
-    n2 = 1.48;
-    Normals(i, :) = get_normal (n1, n2, p0, p1(i, :), inc_ang(i, :), ref_ang(i, :));
+for i = 1:50              
+    Normals(i, :) = get_normal (n1, n2, p0, p1(i, :));
 end
-%Normals = rand(50, 3);
+
+%Check plane 1
+ff = get_normal(n1, n2, p0, [12, 0, Z]);
+distance_z(0, 0, ff, h_0(1, 1));
+distance_z(4, 0, ff, h_0(1, 1));
+
+%Check plane 2
+ff = get_normal(n1, n2, p0, [6, 0, Z])
+distance_z(0, 0, ff, h_0(2, 1))
+distance_z(0.5, 0, ff, h_0(2, 1))
+
+% View of plane
+plane1 = visual_plane(Normals(2, :), h_0(2, 1));
 
 
-% Parameter h_0
-h_0 = 9 + (10-9)* rand (50, 1);
-%h_0 = zeros(50, 1);
-%h_0(:, 1) = 10;
+Dist_beams = zeros (50, 1);
+Coords = [X(:), Y(:)];      % pair of coords by rows
+for i = 1:inc_beams
+    for plane = 1:50
+        z = distance_Z(Coords(i, :), Normals(plane, :), h_0(plane, :));
+        Dist_beams(plane, i) = z;
+    end
+end
 
 
-%???????
-%vol = visual_plane(x, y);
-
-%visual_plane ([x(4), 0], [y(4), 0]);
+%Zak = (Normals(1, 3)*h_0(1, 1) - Normals(1, 1)*X - Normals(1, 2)*Y)/Normals(1, 3)
+%Dist_mini = zeros(1, inc_beams);
+%for planes = 1:50
+%    %Dist_beam = distance_Z(Matrix);    %matrix function
+%    Dist_mini(1, plane) = min(Matrix);
+%end
 
 % Array_beam of dist to planes
-% Column i -- beam i, row i -- plane i
-Dist_beam = zeros (50, 36);
+% Column i – beam i, row i – plane i
 
-% Distance & min dist to planes for each beam
-count = 0;
-z = 0;
-for i = 1:6               % Semi count of beams      
-    for j = 1:6
-        count = count + 1;
+Dist_beam = zeros (50, inc_beams);
+% Distance & min dist to planes for each incident beam
+for cord_x = 0 : length(x)-1
+    for cord_y = 0 : length(y)-1
         for plane = 1:50
-            z = distance(plane, i, j, h_0(plane), Normals);
-            Dist_beam(plane, count) = z;
+            z = distance_z(cord_x, cord_y, Normals(plane, :), h_0(plane, :));
+            Dist_beam(plane, cord_x*length(y) + cord_y + 1) = z;
         end
     end 
 end
 
-
-Dist_min = zeros(1, 36);
-for n = 1:36
+Dist_min = zeros(1, inc_beams);
+for n = 1:inc_beams
     Dist_min(1, n) = min (Dist_beam(:, n));
 end
-
-% Min distance to planes & index of the current plane
-%Min = zeros(11, 11);
-%Index_plane = zeros(11, 11);
-
-%for i = 1:6                      % Count of beams
-%    for j = 1:6
-%        x = X(i, j);
-%        y = Y(i, j);
-%        min_dist = 1000000;
-%        index_plane = 1;
-%        for plane = 1:50
-%            z = distance(plane, x, y, h_0(plane), Normals);
-%            if z < min_dist
-%                min_dist = z;
-%                index_plane = plane;
-%            end
-%        end
-%        Min(i, j) = min_dist;
-%        Index_plane(i, j) = index_plane;
-%    end
-%end
 %% Functions
-
-% Find angle in degrees between vec1 & vec2
-function [ang] = angle (vec1, vec2)
-    vec_1 = get_orth(vec1);
-    vec_2 = get_orth(vec2);
-    ang = acosd( dot(vec_1, vec_2) );
-end
 
 % Create orth from a vector
 function [orth] = get_orth (vector)
@@ -112,33 +92,30 @@ end
 % Create Normal - orth(from 1 to 2 env) with n1, n2, incident_vec, refracted_vec, incident_ang, refracted_ang 
 % Incident beam - p0 - eд вектор
 % Refracted beam - p1
-function [Normal] = get_normal (n1, n2, inc_vec, ref_vec, inc_ang, ref_ang )
-    Normal = ( (n1*inc_vec - n2*ref_vec) / (n1*cosd(inc_ang) - n2*cosd(ref_ang)) );
+function [Normal] = get_normal (n1, n2, inc_vec, ref_vec)
+    inc = get_orth(inc_vec);
+    refr = get_orth(ref_vec);
+    Normal = ( (n1*inc - n2*refr) / sqrt(dot(n1*inc - n2*refr, n1*inc - n2*refr)) );
 end
 
 % Distance to plane
 % Ni - components of Normal-vector
 % (x, y) - start coord of inc_beam
 % h_0 - parameter of the plane
-function [z] = distance(index, x, y, h_0, Normals)
-    Normal_orth = get_orth(Normals(index, :));
-    N1 = Normal_orth(1, 1); 
-    N2 = Normal_orth(1, 2);
-    N3 = Normal_orth(1, 3);
-    z = (N3*h_0 - N1*x - N2*y)/N3;
+function [z] = distance_z(x, y, Normal, h0)
+    Normal_orth = get_orth(Normal);
+    z = (Normal_orth(1, 3)*h0 - Normal_orth(1, 1)*x - Normal_orth(1, 2)*y)/Normal_orth(1, 3);
 end
 
-% Evklid distance to plane
-function [d] = evkild_distance(index, x_0, y_0, h_0, Normals)
-    Normal_orth = get_orth(Normals(index, :));
-    N1 = Normal_orth(1, 1);
-    N2 = Normal_orth(1, 2);
-    N3 = Normal_orth(1, 3);
-    len_N = sqrt( dot(Normals(index, :), Normals(index, :)) );
-    d = abs(N1*x_0 + N2*y_0 + N3*h_0)/len_N;
+function [z] = distance_Z(Coords, Normal, h0)
+    Normal_orth = get_orth(Normal);
+    z = (Normal_orth(1, 3)*h0 - Normal_orth(1, 1)*Coords(1, 1) - Normal_orth(1, 2)*Coords(1, 2))/Normal_orth(1, 3);
 end
 
 % Plane visualising
-function [z] = visual_plane(x, y)
-  z = plot(x, y);  
+function [i] = visual_plane(Normal, h0)
+    x = 0:1:5;
+    y = 0:1:5;
+    z = ( - Normal(1, 1) * x - Normal(1, 2) * y + Normal(1, 3) * h0 ) / Normal(1, 3);
+    i = plot(x, z);  
 end
