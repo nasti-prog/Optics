@@ -20,7 +20,8 @@ refr_beams = length(u)*length(v)                % count of refracted beams
 h_0 = 9 + (10-9)* rand(50, 1);                 % Parameter h_0 - count of planes
 %Planes = size(h_0, 1);
 
-Energy = 2*ones(inc_beams, 1);                  % Energy
+Energy_inc = 2*ones(1, inc_beams);                  % Energy
+Energy_refr = zeros(1, refr_beams);
 
 p1 = zeros(refr_beams, 3);                      % p1
 for i = 0 : length(u)-1
@@ -48,23 +49,11 @@ distance_z(0.5, 0, ff, h_0(2, 1));
 % View of plane
 %plane1 = visual_plane(Normals(2, :), h_0(2, 1));
 
-
+% Distance & min, max dist to planes for each incident beam
 % Array_beam of dist to planes
 % Column i – beam i, row i – plane i
 
-Dist_beams = zeros (50, 1);
-Coords = [X(:), Y(:)];      % pair of coords by rows
-for i = 1:inc_beams
-    for plane = 1:50
-        z = distance_Z(Coords(i, :), Normals(plane, :), h_0(plane, :));
-        Dist_beams(plane, i) = z;
-    end
-end
-
-
-
 Dist_beam = zeros (50, inc_beams);
-% Distance & min, max dist to planes for each incident beam
 for cord_x = 0 : length(x)-1
     for cord_y = 0 : length(y)-1
         for plane = 1:50
@@ -75,15 +64,35 @@ for cord_x = 0 : length(x)-1
 end
 
 Dist_min = zeros(1, inc_beams);
-for n = 1:inc_beams
-    Dist_min(1, n) = min (Dist_beam(:, n));
-end
+
+Dist_min = min(Dist_beam);
+
 
 Dist_max = zeros(1, inc_beams);
 for n = 1:inc_beams
-    Dist_max(1, n) = max (Dist_beam(:, n));
+    [Dist_max(2, n), Dist_max(1, n)] = max (Dist_beam(:, n));
 end
 
+
+Dist_maxi = zeros(1, inc_beams);
+[Dist_maxi(2, :), Dist_maxi(1, :)] = max (Dist_beam);
+
+
+
+
+for i = 1:inc_beams
+    Plane = Dist_max(1, i);
+    Energy_refr(1, Plane) = Energy_refr(1, Plane) + Energy_inc(1, i);
+end
+
+Dist_beams = zeros (50, 1);
+Coords = [X(:), Y(:)];      % pair of coords by rows
+for i = 1:inc_beams
+    for plane = 1:50
+        z = distance_Z(Coords(i, :), Normals(plane, :), h_0(plane, :));
+        Dist_beams(plane, i) = z;
+    end
+end
 %Zak = (Normals(1, 3)*h_0(1, 1) - Normals(1, 1)*X - Normals(1, 2)*Y)/Normals(1, 3)
 %Dist_mini = zeros(1, inc_beams);
 %for planes = 1:50
@@ -128,4 +137,3 @@ function [i] = visual_plane(Normal, h0)
     z = ( - Normal(1, 1) * x - Normal(1, 2) * y + Normal(1, 3) * h0 ) / Normal(1, 3);
     i = plot(x, z);  
 end
-
