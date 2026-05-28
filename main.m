@@ -23,13 +23,13 @@ h_0 = 9 + (10-9)* rand(refr_beams, 1);                       % Parameter h_0 - c
 
 Iter = 1000;                                                 % Count of iterations
 Ismin = false;                                               % alg requires min
-alpha = 1;                                                   % trained num;
+alpha = 3;                                                   % trained num;
 Energy_inc = 2*ones(1, inc_beams);                           % Energy
 Energy_refr = 2*ones(1, refr_beams);
 Energy_req = 6*ones(1, refr_beams);
 
 j = 1:refr_beams;
-p1 = zeros(refr_beams, 3);                                  % p1         
+p1 = zeros(refr_beams, 3);                                   % p1         
 p1(j, :) = [Display(j, 1), Display(j, 2), repmat(Z, refr_beams, 1)];
 
 Normals = zeros(refr_beams, 3);                             % Normals & orths
@@ -47,7 +47,7 @@ distance_z(0.5, 0, ff, h_0(2, 1));
 Dist_beam = zeros (refr_beams, inc_beams);                                                      % row i – plane i, column i – beam i
 count = 0;
 
-for count = 1:2      
+for count = 1:Iter   
 
     for i = 1:inc_beams
         for j = 1:refr_beams
@@ -67,8 +67,9 @@ for count = 1:2
 
     h_0 = h_0 + alpha * (Energy_req - Energy_refr);
 end
-deltaE = Energy_req - Energy_refr;
-count;
+
+deltaE = sqrt( (Energy_req(:, j) - Energy_refr(:, j))^2 / refr_beams);
+count
 %% Functions
 
 % Create orth from a vector
@@ -82,8 +83,7 @@ end
 
 % Create Normal - orth(from 1 to 2 env) with n1, n2, incident_vec, refracted_vec, incident_ang, refracted_ang
 function [Normal] = get_normal (n1, n2, inc_vec, ref_vec)
-    inc = get_orth(inc_vec);
-    refr = get_orth(ref_vec);
+    inc = get_orth(inc_vec);    refr = get_orth(ref_vec);
     Normal = ( (n1.*inc - n2.*refr) ./ sqrt(dot(n1.*inc - n2.*refr, n1.*inc - n2.*refr, 2)) );
 end
 
@@ -106,4 +106,55 @@ function [i] = visual_plane(Normal, h0)
     y = 0:1:5;
     z = ( - Normal(1, 1) * x - Normal(1, 2) * y + Normal(1, 3) * h0 ) / Normal(1, 3);
     i = plot(x, z);  
+end
+
+% Angle by row
+function [alpha] = angle(mat1, mat2)
+    m1 = get_orth(mat1);    m2 = get_orth(mat2);
+    alpha = zeros(size(mat1, 1), size(mat1, 2));
+    for e = 1 : size(mat1, 1)
+        alpha(e, :) = acosd(dot(m1(e, :), m2(e, :)));
+    end
+end
+%% Fresnel
+% Amplitude
+function [r] = r_p(n1, n2, oi, ot)
+    r = (n2*cosd(oi) - n1*cosd(ot)/n2*cosd(oi) + n1*cosd(ot));
+end
+
+% Amplitude
+function [t] = t_p(n1, n2, oi, ot)
+    t = (2*n1*cosd(oi)/n2*cosd(oi) + n1*cosd(ot));
+end
+
+% Amplitude
+function [r] = r_s(n1, n2, oi, ot)
+    r = (n1*cosd(oi) - n2*cosd(ot)/n1*cosd(oi) + n2*cosd(ot));
+end
+
+% Amplitude
+function [t] = t_s(n1, n2, oi, ot)
+    t = (2*n1*cosd(oi)/n1*cosd(oi) + n2*cosd(ot));
+end
+
+
+
+% Energy
+function [R] = R_p(n1, n2, oi, ot)
+    R = abs( r_p(n1, n2, oi, ot) )^2;
+end
+
+% Energy
+function [T] = T_p(n1, n2, oi, ot)
+    T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_p(n1, n2, oi, ot) )^2;
+end
+
+% Energy
+function [R] = R_s(n1, n2, oi, ot)
+    R = abs( r_s(n1, n2, oi, ot) )^2;
+end
+
+% Energy
+function [T] = T_s(n1, n2, oi, ot)
+    T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_s(n1, n2, oi, ot) )^2;
 end
