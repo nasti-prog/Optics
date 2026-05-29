@@ -69,7 +69,9 @@ for count = 1:Iter
 end
 
 deltaE = sqrt( (Energy_req(:, j) - Energy_refr(:, j))^2 / refr_beams);
-count
+count;
+rp = r(n1, n2, 30, 45, 'p')
+rs = r(n1, n2, 30, 45, 's')
 %% Functions
 
 % Create orth from a vector
@@ -118,43 +120,38 @@ function [alpha] = angle(mat1, mat2)
 end
 %% Fresnel
 % Amplitude
-function [r] = r_p(n1, n2, oi, ot)
-    r = (n2*cosd(oi) - n1*cosd(ot)/n2*cosd(oi) + n1*cosd(ot));
+function [r] = r(n1, n2, oi, ot, type)
+    if (type == 'p')
+        r = (n2*cosd(oi) - n1*cosd(ot)/n2*cosd(oi) + n1*cosd(ot)); %p
+    else
+        r = (n1*cosd(oi) - n2*cosd(ot)/n1*cosd(oi) + n2*cosd(ot)); %s
+    end
 end
 
 % Amplitude
-function [t] = t_p(n1, n2, oi, ot)
-    t = (2*n1*cosd(oi)/n2*cosd(oi) + n1*cosd(ot));
+function [t] = t(n1, n2, oi, ot, type)
+    if (type == 'p')
+        t = (2*n1*cosd(oi)/n2*cosd(oi) + n1*cosd(ot)); %p
+    else
+        t = (2*n1*cosd(oi)/n1*cosd(oi) + n2*cosd(ot)); %s
+    end
 end
-
-% Amplitude
-function [r] = r_s(n1, n2, oi, ot)
-    r = (n1*cosd(oi) - n2*cosd(ot)/n1*cosd(oi) + n2*cosd(ot));
-end
-
-% Amplitude
-function [t] = t_s(n1, n2, oi, ot)
-    t = (2*n1*cosd(oi)/n1*cosd(oi) + n2*cosd(ot));
-end
-
 
 
 % Energy
-function [R] = R_p(n1, n2, oi, ot)
-    R = abs( r_p(n1, n2, oi, ot) )^2;
+function [R] = R(n1, n2, oi, ot, type)
+    if (type == 'p')
+        R = abs( r_p(n1, n2, oi, ot) )^2; %p
+    else
+        R = abs( r_s(n1, n2, oi, ot) )^2; %s
+    end
 end
 
 % Energy
-function [T] = T_p(n1, n2, oi, ot)
-    T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_p(n1, n2, oi, ot) )^2;
-end
-
-% Energy
-function [R] = R_s(n1, n2, oi, ot)
-    R = abs( r_s(n1, n2, oi, ot) )^2;
-end
-
-% Energy
-function [T] = T_s(n1, n2, oi, ot)
-    T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_s(n1, n2, oi, ot) )^2;
+function [T] = T(n1, n2, oi, ot, type)
+    if (type == 'p')
+        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_p(n1, n2, oi, ot) )^2; %p
+    else
+        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_s(n1, n2, oi, ot) )^2; %s
+    end
 end
