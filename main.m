@@ -13,65 +13,70 @@ y = 0:0.5:2.5;
 inc_beams = length(x)*length(y);                            %count of incident beams
 Aperture = [X(:), Y(:)];                                    % pair of coords by rows
 
-u = 0:1:7;
-v = 0:1:7;
+u = 0:2:14;
+v = 0:2:14;
 [U, V] = meshgrid(u, v);
 refr_beams = length(u)*length(v);                            % count of refracted beams
 Display = [U(:), V(:)];
 
-h_0 = 9 + (10-9)* rand(refr_beams, 1);                       % Parameter h_0 - count of planes
+h_0 = 9 + (10-9)* rand(1, refr_beams);                       % Parameter h_0 - count of planes
 
-Iter = 1000;                                                 % Count of iterations
+Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           % Energy
+Energy_refr = zeros(1, refr_beams);
+Energy_req = (1/refr_beams)*ones(1, refr_beams);
+Iter = 500;                                                 % Count of iterations
 Ismin = false;                                               % alg requires min
-alpha = 3;                                                   % trained num;
-Energy_inc = 2*ones(1, inc_beams);                           % Energy
-Energy_refr = 2*ones(1, refr_beams);
-Energy_req = 6*ones(1, refr_beams);
-
-j = 1:refr_beams;
-p1 = zeros(refr_beams, 3);                                   % p1         
-p1(j, :) = [Display(j, 1), Display(j, 2), repmat(Z, refr_beams, 1)];
-
-Normals = zeros(refr_beams, 3);                             % Normals & orths
+alpha = 8;                                                   % trained num;
+alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
+                                            
+p1 = [Display(:, 1), Display(:, 2), repmat(Z, refr_beams, 1)];      % p1
+                          
 A = repmat(p0, refr_beams, 1);
-Normals(j, :) = get_normal(n1, n2, A(j, :), p1(j, :));
+Normals = get_normal(n1, n2, A, p1);        % Normals & orths
 
 %Check plane 2
 ff = get_normal(n1, n2, p0, [6, 0, Z]);
-distance_z(0, 0, ff, h_0(2, 1));
-distance_z(0.5, 0, ff, h_0(2, 1));
+distance_z(0, 0, ff, h_0(1, 2));
+distance_z(0.5, 0, ff, h_0(1, 2));
 
 % View of plane
 %plane1 = visual_plane(Normals(2, :), h_0(2, 1));
 
-Dist_beam = zeros (refr_beams, inc_beams);                                                      % row i – plane i, column i – beam i
-count = 0;
+% row i – plane i, column i – beam i
+RRMSE = zeros(1, Iter);
 
-for count = 1:Iter   
+for count = 1:Iter
+    Energy_refr = zeros(1, refr_beams);
 
-    for i = 1:inc_beams
-        for j = 1:refr_beams
-            Dist_beam(j, i) = distance_Z(Aperture(i, :), Normals(j, :), h_0(j));         % dist to planes for each inc beam
-        end
-    end
+    Dist_beam = distance_Z(Aperture, Normals, h_0);         % dist to planes for each inc beam
 
-    Dist_need = zeros(1, inc_beams);
     if Ismin 
-        [Dist_need(2, :), Dist_need(1, :)] = min (Dist_beam);
+        [Dist_need, Index_plane] = min (Dist_beam);
     else 
-        [Dist_need(2, :), Dist_need(1, :)] = max (Dist_beam);
+        [Dist_need, Index_plane] = max (Dist_beam);
     end
+    
+    for i = 1:inc_beams
+        Energy_refr(1, Index_plane(1, i)) = Energy_inc(1, i) + Energy_refr(1, Index_plane(1, i));   
+    end
+    
+    %fprintf( '%1.0f %3.3f %3.3f \n', [count; sum(Energy_refr); sum(Energy_inc)] );
 
-    Plane = Dist_need(1, i);
-    Energy_refr(1, Plane) = Energy_refr(1, Plane) + Energy_inc(1, i);
+    if Ismin
+        h_0 = h_0 - alpha * (Energy_req - Energy_refr);
+    else
+        h_0 = h_0 + alpha_max * (Energy_req - Energy_refr);
+    end
+    
+    Error = ( rmse(Energy_req, Energy_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
+    RRMSE(1, count) = Error;
 
-    h_0 = h_0 + alpha * (Energy_req - Energy_refr);
+    %fprintf( '%1.0f %4.4f\n', [count; Error] );
 end
 
-deltaE = sqrt( (Energy_req(:, j) - Energy_refr(:, j))^2 / refr_beams);
-count;
-rp = r(n1, n2, 30, 45, 'p')
-rs = r(n1, n2, 30, 45, 's')
+relative_error = ( abs(Energy_req - Energy_refr) / Energy_refr )*100
+
+plot(RRMSE)
 %% Functions
 
 % Create orth from a vector
@@ -83,15 +88,14 @@ orth = zeros(size(matrix, 1), size(matrix, 2));
     end
 end
 
-% Create Normal - orth(from 1 to 2 env) with n1, n2, incident_vec, refracted_vec, incident_ang, refracted_ang
+% Create Normal - orth(from 1 to 2 env) with n1, n2, incident_vec, refracted_vec
 function [Normal] = get_normal (n1, n2, inc_vec, ref_vec)
     inc = get_orth(inc_vec);    refr = get_orth(ref_vec);
-    Normal = ( (n1.*inc - n2.*refr) ./ sqrt(dot(n1.*inc - n2.*refr, n1.*inc - n2.*refr, 2)) );
+    Normal = ( (n1.*inc - n2.*refr) ./ sqrt(dot(n1.*inc - n2.*refr, n1.*inc - n2.*refr, 2)) ); %dim = 2, in rows
 end
 
 % Distance to plane
 % (x, y) - start coord of inc_beam
-% h_0 - parameter of the plane
 function [z] = distance_z(x, y, Normal, h0)
     Normal_orth = get_orth(Normal);
     z = (Normal_orth(1, 3)*h0 - Normal_orth(1, 1)*x - Normal_orth(1, 2)*y)/Normal_orth(1, 3);
@@ -99,7 +103,7 @@ end
 
 function [z] = distance_Z(Coords, Normal, h0)
     Normal_orth = get_orth(Normal);
-    z = (Normal_orth(1, 3).*h0 - Normal_orth(1, 1).* Coords(1, 1) - Normal_orth(1, 2).*Coords(1, 2))./Normal_orth(1, 3);
+    z = (Normal_orth(:, 3).*h0' - Normal_orth(:, 1)* Coords(:, 1)' - Normal_orth(:, 2)*Coords(:, 2)')./Normal_orth(:, 3);
 end
 
 % Plane visualising
@@ -119,14 +123,6 @@ function [alpha] = angle(mat1, mat2)
     end
 end
 %% Fresnel
-% Amplitude
-function [r] = r(n1, n2, oi, ot, type)
-    if (type == 'p')
-        r = (n2*cosd(oi) - n1*cosd(ot)/n2*cosd(oi) + n1*cosd(ot)); %p
-    else
-        r = (n1*cosd(oi) - n2*cosd(ot)/n1*cosd(oi) + n2*cosd(ot)); %s
-    end
-end
 
 % Amplitude
 function [t] = t(n1, n2, oi, ot, type)
@@ -137,21 +133,13 @@ function [t] = t(n1, n2, oi, ot, type)
     end
 end
 
-
-% Energy
-function [R] = R(n1, n2, oi, ot, type)
-    if (type == 'p')
-        R = abs( r_p(n1, n2, oi, ot) )^2; %p
-    else
-        R = abs( r_s(n1, n2, oi, ot) )^2; %s
-    end
-end
-
 % Energy
 function [T] = T(n1, n2, oi, ot, type)
-    if (type == 'p')
-        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_p(n1, n2, oi, ot) )^2; %p
+    if type == 'p'
+        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t(n1, n2, oi, ot, "p") )^2; %p
+    elseif type == 's'
+        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t(n1, n2, oi, ot, "s") )^2; %s
     else
-        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t_s(n1, n2, oi, ot) )^2; %s
+        T = (n2*cosd(ot)/n1*cosd(oi))* 0.5 * (abs( t(n1, n2, oi, ot, "s") )^2 + abs( t(n1, n2, oi, ot, "p") )^2); %unpolarized
     end
 end
