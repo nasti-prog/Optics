@@ -24,9 +24,9 @@ h_0 = 9 + (10-9)* rand(1, refr_beams);                       % Parameter h_0 - c
 Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           % Energy
 Energy_refr = zeros(1, refr_beams);
 Energy_req = (1/refr_beams)*ones(1, refr_beams);
-Iter = 500;                                                 % Count of iterations
+Iter = 1000;                                                 % Count of iterations
 Ismin = false;                                               % alg requires min
-alpha = 8;                                                   % trained num;
+alpha = 1E-2;                                                   % trained num;
 alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
                                             
 p1 = [Display(:, 1), Display(:, 2), repmat(Z, refr_beams, 1)];      % p1
@@ -65,18 +65,24 @@ for count = 1:Iter
     if Ismin
         h_0 = h_0 - alpha * (Energy_req - Energy_refr);
     else
-        h_0 = h_0 + alpha_max * (Energy_req - Energy_refr);
+        h_0 = h_0 + alpha * (Energy_req - Energy_refr);
     end
     
     Error = ( rmse(Energy_req, Energy_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
     RRMSE(1, count) = Error;
-
+    
+    imagesc(Energy_refr)
+    colorbar
+    colormap(jet)   %color range
+    drawnow
+    pause(0.001)
+    %write iters & axes
     %fprintf( '%1.0f %4.4f\n', [count; Error] );
 end
 
-relative_error = ( abs(Energy_req - Energy_refr) / Energy_refr )*100
+relative_error = ( abs(Energy_req - Energy_refr) / Energy_refr )*100;
 
-plot(RRMSE)
+%plot(RRMSE)
 %% Functions
 
 % Create orth from a vector
