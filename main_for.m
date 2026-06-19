@@ -24,11 +24,10 @@ h_0 = 9 + (10-9)* rand(1, refr_beams);                       % Parameter h_0 - c
 Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           % Energy
 Energy_refr = zeros(1, refr_beams);
 Energy_req = (1/refr_beams)*ones(1, refr_beams);
-Iter = 10;                                                 % Count of iterations
+Iter = 1000;                                                 % Count of iterations
 Ismin = false;                                               % alg requires min
-alpha = 1E-2;                                                   % trained num;
-alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
-                                            
+alpha = (1E-2)/4;                                                   % trained num;
+
 p1 = [Display(:, 1), Display(:, 2), repmat(Z, refr_beams, 1)];      % p1
                           
 A = repmat(p0, refr_beams, 1);
@@ -42,46 +41,41 @@ distance_z(0.5, 0, ff, h_0(1, 2));
 % View of plane
 %plane1 = visual_plane(Normals(2, :), h_0(2, 1));
 
-% row i – plane i, column i – beam i
 RRMSE = zeros(1, Iter);
 
 for count = 1:Iter
-
-    Energy_refr = zeros(1, refr_beams);
-    E_refr = repmat(Energy_refr', 1, inc_beams);
-    E_inc = repmat(Energy_inc, refr_beams, 1);
-    E_refr = E_inc + E_refr;
+    Energy_refr = zeros(1, refr_beams);                     % row i – plane i, column i – beam i
 
     Dist_beam = distance_Z(Aperture, Normals, h_0);         % dist to planes for each inc beam
+
+    if Ismin 
+        [Dist_need, Index_plane] = min (Dist_beam);
+    else 
+        [Dist_need, Index_plane] = max (Dist_beam);
+    end
+    
+    for i = 1:inc_beams
+        Energy_refr(1, Index_plane(1, i)) = Energy_inc(1, i) + Energy_refr(1, Index_plane(1, i));   
+    end
     
     %fprintf( '%1.0f %3.3f %3.3f \n', [count; sum(Energy_refr); sum(Energy_inc)] );
 
     if Ismin
-        [Dist_need, Index_plane] = min (Dist_beam);
-        Energy_refr = E_refr(Index_plane, inc_beams) + Energy_inc';
-        h_0 = h_0 - alpha * (Energy_req - E_refr);
+        h_0 = h_0 - alpha * (Energy_req - Energy_refr);
     else
-        [Dist_need, Index_plane] = max (Dist_beam);
-        Energy_refr = E_refr(Index_plane, inc_beams) + Energy_inc';
-        h_0 = h_0 + alpha * (Energy_req - Energy_refr'); 
+        h_0 = h_0 + alpha * (Energy_req - Energy_refr);
     end
     
-    Error = ( rmse(Energy_req, E_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
+    Error = ( rmse(Energy_req, Energy_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
     RRMSE(1, count) = Error;
     
-    imagesc(E_refr)
-    colorbar
-    colormap(jet)   %color range
-    drawnow
-    pause(0.001)
-    %write iters & axes
+    subplot(2, 1, 1)
+    lumi_map(Energy_refr)
 
     %fprintf( '%1.0f %4.4f\n', [count; Error] );
 end
-
-relative_error = ( abs(Energy_req - Energy_refr) / Energy_refr )*100;
-
-%plot(RRMSE)
+subplot(2, 1, 2)
+plot(RRMSE)
 %% Functions
 
 % Create orth from a vector
@@ -126,6 +120,31 @@ function [alpha] = angle(mat1, mat2)
     for e = 1 : size(mat1, 1)
         alpha(e, :) = acosd(dot(m1(e, :), m2(e, :)));
     end
+end
+
+% Alpha Optimization
+function [alpha_1] = get_alpha(count)
+    if count == 1 
+       alpha_1 = alpha_0;
+    else
+        alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
+        alpha_min = alpha_0;
+        
+        Error = ( rmse(Energy_req, Energy_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
+        RRMSE(1, count) = Error; 
+        alpha_1 = interp2(alpha_max, alpha_min, 'linear');   
+    end 
+end
+
+function [] = lumi_map(Matrix)
+    rows = sqrt(length(Matrix));
+    Matr = reshape(Matrix, rows, rows)'; % into square-matr by rows
+    imagesc(Matr)
+    colorbar
+    colormap(jet)                        %color range
+    title('Display')
+    drawnow
+    pause(1e-6)
 end
 %% Fresnel
 
