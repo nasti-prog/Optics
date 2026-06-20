@@ -7,34 +7,34 @@ Z = 1000;                                                   % Parameter of outpu
 n1 = 1.48;
 n2 = 1;
 
-x = 0:0.5:2.5;                                              % равномерное распределение
+x = 0:0.5:2.5;                                              % equal distribution
 y = 0:0.5:2.5;
 [X, Y] = meshgrid(x, y);
-inc_beams = length(x)*length(y);                            %count of incident beams
+inc_beams = length(x)*length(y);                            
 Aperture = [X(:), Y(:)];                                    % pair of coords by rows
 
 u = 0:2:14;
 v = 0:2:14;
 [U, V] = meshgrid(u, v);
-refr_beams = length(u)*length(v);                            % count of refracted beams
+refr_beams = length(u)*length(v);                            
 Display = [U(:), V(:)];
 
 h_0 = 9 + (10-9)* rand(1, refr_beams);                       % Parameter h_0 - count of planes
 
-Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           % Energy
+Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           
 Energy_refr = zeros(1, refr_beams);
 Energy_req = (1/refr_beams)*ones(1, refr_beams);
-Iter = 1000;                                                 % Count of iterations
+Iter = 1000;                                                 
 Ismin = false;                                               % alg requires min
-alpha = (1E-2)/4;                                                   % trained num;
+alpha = (1E-2)/64;
+alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
 
-p1 = [Display(:, 1), Display(:, 2), repmat(Z, refr_beams, 1)];      % p1
+p1 = [Display(:, 1), Display(:, 2), repmat(Z, refr_beams, 1)];
                           
 A = repmat(p0, refr_beams, 1);
-Normals = get_normal(n1, n2, A, p1);        % Normals & orths
+Normals = get_normal(n1, n2, A, p1);
 
-%Check plane 2
-ff = get_normal(n1, n2, p0, [6, 0, Z]);
+ff = get_normal(n1, n2, p0, [6, 0, Z]);                     %Check plane 2
 distance_z(0, 0, ff, h_0(1, 2));
 distance_z(0.5, 0, ff, h_0(1, 2));
 
@@ -58,22 +58,16 @@ for count = 1:Iter
         Energy_refr(1, Index_plane(1, i)) = Energy_inc(1, i) + Energy_refr(1, Index_plane(1, i));   
     end
     
-    %fprintf( '%1.0f %3.3f %3.3f \n', [count; sum(Energy_refr); sum(Energy_inc)] );
+    h_0 = get_h_0(h_0, Ismin, alpha, Energy_req, Energy_refr);
+    %h_0 = get_h_0(h_0, Ismin, alpha_max, Energy_req, Energy_refr);
 
-    if Ismin
-        h_0 = h_0 - alpha * (Energy_req - Energy_refr);
-    else
-        h_0 = h_0 + alpha * (Energy_req - Energy_refr);
-    end
-    
-    Error = ( rmse(Energy_req, Energy_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
-    RRMSE(1, count) = Error;
+    rrmse = ( rmse(Energy_req, Energy_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
+    RRMSE(1, count) = rrmse;
     
     subplot(2, 1, 1)
-    lumi_map(Energy_refr)
-
-    %fprintf( '%1.0f %4.4f\n', [count; Error] );
+    lumi_map(Energy_refr, count, rrmse)
 end
+
 subplot(2, 1, 2)
 plot(RRMSE)
 %% Functions
@@ -127,22 +121,30 @@ function [alpha_1] = get_alpha(count)
     if count == 1 
        alpha_1 = alpha_0;
     else
-        alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
-        alpha_min = alpha_0;
-        
         Error = ( rmse(Energy_req, Energy_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
         RRMSE(1, count) = Error; 
+        alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
+        alpha_min = min(RRMSE);
         alpha_1 = interp2(alpha_max, alpha_min, 'linear');   
     end 
 end
 
-function [] = lumi_map(Matrix)
+function [h_0] = get_h_0(h_0, Ismin, alpha, Matr_req, Matr_i)
+    if Ismin
+        h_0 = h_0 - alpha * (Matr_req - Matr_i);
+    else
+        h_0 = h_0 + alpha * (Matr_req - Matr_i);
+    end
+end
+
+function [] = lumi_map(Matrix, count, Error)
     rows = sqrt(length(Matrix));
     Matr = reshape(Matrix, rows, rows)'; % into square-matr by rows
     imagesc(Matr)
     colorbar
-    colormap(jet)                        %color range
-    title('Display')
+    colormap(gray)                        % color range: jet - rainbow
+    title_add = sprintf('Count: %d, Error: %.4f', count, Error);
+    title('Display', title_add);
     drawnow
     pause(1e-6)
 end
