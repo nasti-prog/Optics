@@ -6,15 +6,15 @@ n2 = 1;
 Iter = 1000;                                                 
 Ismin = false;                                              
 
-x = 0:0.5:2.5;                                              % Aperture & Display
-y = 0:0.5:2.5;
+x = 0:0.5:7;                                              % Aperture & Display
+y = 0:0.5:7;
 [X, Y] = meshgrid(x, y);
-inc_beams = length(x)*length(y);                            
+inc_beams = length(x)*length(y)                          
 Aperture = [X(:), Y(:)];                                   
 u = 0:2:14;
 v = 0:2:14;
 [U, V] = meshgrid(u, v);
-refr_beams = length(u)*length(v);                            
+refr_beams = length(u)*length(v)                            
 Display = [U(:), V(:)];
 
 Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           
@@ -27,9 +27,9 @@ A = repmat(p0, refr_beams, 1);
 Normals = get_normal(n1, n2, A, p1);
 
 h_0 = 9 + (10-9)* rand(1, refr_beams);
-alpha = 1E-2;
+alpha = (1E-2);
 Error = zeros(1, Iter);
-[h_0, alpha] = new_alpha(Aperture, Normals, h_0, Energy_inc, Energy_req, Ismin, alpha, alpha_max, Iter, Error);
+[h_0, alpha] = update(Aperture, Normals, h_0, Energy_inc, Energy_req, Ismin, alpha, alpha_max, Iter);
 %% Functions
 % Create orth from a vector
 function [orth] = get_orth (matrix)

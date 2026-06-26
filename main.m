@@ -1,89 +1,36 @@
 %% Distribution of Energy
-
-%Input data.
-p0 = [0, 0, 1];
-Z = 1000;                                                   % Parameter of output plane
-
+p0 = [0, 0, 1];                                             %Input data
+Z = 1000;                                                   
 n1 = 1.48;
 n2 = 1;
+Iter = 1000;                                                 
+Ismin = false;                                              
 
-x = 0:0.5:2.5;                                              % равномерное распределение
-y = 0:0.5:2.5;
+x = 0:0.5:7;                                              % Aperture & Display
+y = 0:0.5:7;
 [X, Y] = meshgrid(x, y);
-inc_beams = length(x)*length(y);                            %count of incident beams
-Aperture = [X(:), Y(:)];                                    % pair of coords by rows
-
+inc_beams = length(x)*length(y)                          
+Aperture = [X(:), Y(:)];                                   
 u = 0:2:14;
 v = 0:2:14;
 [U, V] = meshgrid(u, v);
-refr_beams = length(u)*length(v);                            % count of refracted beams
+refr_beams = length(u)*length(v)                            
 Display = [U(:), V(:)];
 
-h_0 = 9 + (10-9)* rand(1, refr_beams);                       % Parameter h_0 - count of planes
-
-Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           % Energy
-Energy_refr = zeros(1, refr_beams);
+Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           
 Energy_req = (1/refr_beams)*ones(1, refr_beams);
-Iter = 10;                                                 % Count of iterations
-Ismin = false;                                               % alg requires min
-alpha = 1E-2;                                                   % trained num;
 alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
-                                            
-p1 = [Display(:, 1), Display(:, 2), repmat(Z, refr_beams, 1)];      % p1
-                          
+
+p1 = [Display(:, 1), Display(:, 2), repmat(Z, refr_beams, 1)];
+
 A = repmat(p0, refr_beams, 1);
-Normals = get_normal(n1, n2, A, p1);        % Normals & orths
+Normals = get_normal(n1, n2, A, p1);
 
-%Check plane 2
-ff = get_normal(n1, n2, p0, [6, 0, Z]);
-distance_z(0, 0, ff, h_0(1, 2));
-distance_z(0.5, 0, ff, h_0(1, 2));
-
-% View of plane
-%plane1 = visual_plane(Normals(2, :), h_0(2, 1));
-
-% row i – plane i, column i – beam i
-RRMSE = zeros(1, Iter);
-
-for count = 1:Iter
-
-    Energy_refr = zeros(1, refr_beams);
-    E_refr = repmat(Energy_refr', 1, inc_beams);
-    E_inc = repmat(Energy_inc, refr_beams, 1);
-    E_refr = E_inc + E_refr;
-
-    Dist_beam = distance_Z(Aperture, Normals, h_0);         % dist to planes for each inc beam
-    
-    %fprintf( '%1.0f %3.3f %3.3f \n', [count; sum(Energy_refr); sum(Energy_inc)] );
-
-    if Ismin
-        [Dist_need, Index_plane] = min (Dist_beam);
-        Energy_refr = E_refr(Index_plane, inc_beams) + Energy_inc';
-        h_0 = h_0 - alpha * (Energy_req - E_refr);
-    else
-        [Dist_need, Index_plane] = max (Dist_beam);
-        Energy_refr = E_refr(Index_plane, inc_beams) + Energy_inc';
-        h_0 = h_0 + alpha * (Energy_req - Energy_refr'); 
-    end
-    
-    Error = ( rmse(Energy_req, E_refr) / (sum(Energy_req)/length(Energy_req)) )*100;
-    RRMSE(1, count) = Error;
-    
-    imagesc(E_refr)
-    colorbar
-    colormap(jet)   %color range
-    drawnow
-    pause(0.001)
-    %write iters & axes
-
-    %fprintf( '%1.0f %4.4f\n', [count; Error] );
-end
-
-relative_error = ( abs(Energy_req - Energy_refr) / Energy_refr )*100;
-
-%plot(RRMSE)
+h_0 = 9 + (10-9)* rand(1, refr_beams);
+alpha = (1E-2);
+Error = zeros(1, Iter);
+[h_0, alpha] = new_alpha(Aperture, Normals, h_0, Energy_inc, Energy_req, Ismin, alpha, alpha_max, Iter);
 %% Functions
-
 % Create orth from a vector
 function [orth] = get_orth (matrix)
 orth = zeros(size(matrix, 1), size(matrix, 2));
@@ -99,16 +46,20 @@ function [Normal] = get_normal (n1, n2, inc_vec, ref_vec)
     Normal = ( (n1.*inc - n2.*refr) ./ sqrt(dot(n1.*inc - n2.*refr, n1.*inc - n2.*refr, 2)) ); %dim = 2, in rows
 end
 
+% Angle by row
+function [alpha] = angle(mat1, mat2)
+    m1 = get_orth(mat1);    m2 = get_orth(mat2);
+    alpha = zeros(size(mat1, 1), size(mat1, 2));
+    for e = 1 : size(mat1, 1)
+        alpha(e, :) = acosd(dot(m1(e, :), m2(e, :)));
+    end
+end
+
 % Distance to plane
 % (x, y) - start coord of inc_beam
 function [z] = distance_z(x, y, Normal, h0)
     Normal_orth = get_orth(Normal);
     z = (Normal_orth(1, 3)*h0 - Normal_orth(1, 1)*x - Normal_orth(1, 2)*y)/Normal_orth(1, 3);
-end
-
-function [z] = distance_Z(Coords, Normal, h0)
-    Normal_orth = get_orth(Normal);
-    z = (Normal_orth(:, 3).*h0' - Normal_orth(:, 1)* Coords(:, 1)' - Normal_orth(:, 2)*Coords(:, 2)')./Normal_orth(:, 3);
 end
 
 % Plane visualising
@@ -117,15 +68,6 @@ function [i] = visual_plane(Normal, h0)
     y = 0:1:5;
     z = ( - Normal(1, 1) * x - Normal(1, 2) * y + Normal(1, 3) * h0 ) / Normal(1, 3);
     i = plot(x, z);  
-end
-
-% Angle by row
-function [alpha] = angle(mat1, mat2)
-    m1 = get_orth(mat1);    m2 = get_orth(mat2);
-    alpha = zeros(size(mat1, 1), size(mat1, 2));
-    for e = 1 : size(mat1, 1)
-        alpha(e, :) = acosd(dot(m1(e, :), m2(e, :)));
-    end
 end
 %% Fresnel
 
