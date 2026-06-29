@@ -1,8 +1,4 @@
-function [h_0, alpha, Error] = update(Aperture, Normals, h_0, Matr_inc, Matr_req, Ismin, alpha, alpha_max, Iter)
-    if (alpha <= alpha_max)
-        alpha = alpha/4;
-    end
-    
+function [h_0, alpha, Error] = update(Aperture, Normals, h_0, Matr_inc, Matr_req, Ismin, alpha, Iter)
     for count = 1:Iter                      % update of h_0
         
         Matr_refr = trace(Aperture, Normals, h_0, Matr_inc, Ismin);
