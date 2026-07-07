@@ -1,37 +1,42 @@
 %% Distribution of Energy
-p0 = [0, 0, 1];                                             %Input data
-R = 1000;                                                   
-n1 = 1.48;
+p0 = [0, 0, 1];                                             % Input data
+L = 1000;                                                   
+n1 = 1.5;
 n2 = 1;
 Iter = 1000;                                                 
 Ismin = false;                                              
+alpha = (2E-2)/1.57;
 
-x = 0:0.5:12.5;                                              % Aperture & Display
-y = 0:0.5:12.5;
+size_aper = 5;
+size_disp = 300;
+n_aper = 8;
+n_disp = 3;
+
+x = -size_aper/2:( size_aper/n_aper ):size_aper/2;                                              % Aperture & Display
+y = -size_aper/2:( size_aper/n_aper ):size_aper/2;      
 [X, Y] = meshgrid(x, y);
-inc_beams = length(x)*length(y);                          
+inc_beams = length(x)*length(y)                         
 Aperture = [X(:), Y(:)];                                   
-u = 0:2:14;
-v = 0:2:14;
+u = -size_disp/2:( size_disp/n_disp ):size_disp/2;       
+v = -size_disp/2:( size_disp/n_disp ):size_disp/2;  
 [U, V] = meshgrid(u, v);
-refr_beams = length(u)*length(v);                            
+refr_beams = length(u)*length(v)                           
 Display = [U(:), V(:)];
 
 Energy_inc = (1/inc_beams)*ones(1, inc_beams);                           
 Energy_req = (1/refr_beams)*ones(1, refr_beams);
 alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(Energy_req)*length(x));
 
-p1 = [Display(:, 1), Display(:, 2), repmat(R, refr_beams, 1)];
+p1 = [Display(:, 1), Display(:, 2), repmat(L, refr_beams, 1)];
 
 A = repmat(p0, refr_beams, 1);
 Normals = get_normal(n1, n2, A, p1);
 
-h_0 = 9 + (10-9)* rand(1, refr_beams);
-Error = zeros(1, Iter);
-[h_0, alpha] = update(Aperture, Normals, h_0, Energy_inc, Energy_req, Ismin, (6E-2)/1.67, Iter);
+h_0 = 8 + (12 - 8)*rand(1, refr_beams);
+[h_0, alpha, ~] = update(Aperture, Normals, h_0, Energy_inc, Energy_req, Ismin, alpha, Iter);
 
-[~, z] = trace(Aperture, Normals, h_0, Energy_inc, Ismin);
-Z = reshape(Lines, size(X));
+[~, z, ~] = trace(Aperture, Normals, h_0, Energy_inc, Ismin);
+Z = reshape(z, size(X));
 %% Functions
 % Create orth from a vector
 function [orth] = get_orth (matrix)

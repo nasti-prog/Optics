@@ -1,4 +1,4 @@
-function [] = lumi_map(Matrix, count, Error, alpha, h )
+function [] = lumi_map(Matrix, count, Error, alpha, h)
     rows = sqrt(length(Matrix));
     Matr = reshape(Matrix, rows, rows)'; % into square-matr by rows
     imagesc(Matr)
