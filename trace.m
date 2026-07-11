@@ -1,31 +1,18 @@
-function [Energy_refr, Dist_need, Index_plane] = trace(Aperture, Normals, h_0, Energy_inc, Ismin)
+function [energy_refr, dist_need, index_plane] = trace(aperture, normals, h_0, energy_inc, ismin)
     
-    Energy_refr = zeros(1, size(h_0, 2));
+    energy_refr = zeros(1, size(h_0, 2));
     
-    Dist_beam = distance_Z(Aperture, Normals, h_0);
+    dist_beam = distance_Z(aperture, normals, h_0);
     
-    if Ismin
-        [Dist_need, Index_plane] = min (Dist_beam);
+    if ismin
+        [dist, index_plane] = min (dist_beam);
     else
-        [Dist_need, Index_plane] = max (Dist_beam);
+        [dist, index_plane] = max (dist_beam);
     end
-        
-    for i = 1:size(Energy_inc, 2)
-        Energy_refr(1, Index_plane(1, i)) = Energy_inc(1, i) + Energy_refr(1, Index_plane(1, i));
-    end
-    
-    function [z] = distance_Z(Coords, Normal, h0)
-        Normal_orth = get_orth(Normal);
-        z = (Normal_orth(:, 3).*h0' - Normal_orth(:, 1)* Coords(:, 1)' - Normal_orth(:, 2)*Coords(:, 2)')./Normal_orth(:, 3);
-    end
+    N = sqrt(size(aperture, 1));
+    dist_need = reshape(dist, N, N);
 
-    function [orth] = get_orth (matrix)
-        orth = zeros(size(matrix, 1), size(matrix, 2));
-        for e = 1 : size(matrix, 1)
-           len = sqrt(dot(matrix(e, :), matrix(e, :)));
-           orth(e, :) = matrix(e, :)/len;
-        end
+    for i = 1:size(energy_inc, 2)
+        energy_refr(1, index_plane(1, i)) = energy_inc(1, i) + energy_refr(1, index_plane(1, i));
     end
-
 end
-

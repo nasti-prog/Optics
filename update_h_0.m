@@ -1,7 +1,7 @@
-function [h_0] = update_h_0(Ismin, alpha, h_0, Matr_req, Matr_refr)
-    if Ismin
-        h_0 = h_0 - alpha * (Matr_req - Matr_refr);
+function [h_0] = update_h_0(ismin, alpha, h_0, matr_req, matr_refr)
+    if ismin
+        h_0 = h_0 - alpha * (matr_req - matr_refr);
     else
-        h_0 = h_0 + alpha * (Matr_req - Matr_refr);
+        h_0 = h_0 + alpha * (matr_req - matr_refr);
     end
 end

@@ -1,4 +1,13 @@
-function export_surf2rhino(x, y, z)
+function export_surf2rhino(x, y, aperture, normals, h_0, ismin)
+    dist_beam = distance_Z(aperture, normals, h_0);
+    
+    if ismin
+        [dist, ~] = min (dist_beam);
+    else
+        [dist, ~] = max (dist_beam);
+    end
+    z = reshape(dist, size(sqrt(aperture)));
+
     [fileName, pathName] = uiputfile({'*.txt', 'Rhino script file (*.txt)'}, 'Export lens surface to Rhino');
     
     if fileName ~= 0
