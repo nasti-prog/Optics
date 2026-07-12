@@ -1,6 +1,6 @@
-function [z] = distance_Z(Coords, Normal, h0)
-    Normal_orth = get_orth(Normal);
-    z = (Normal_orth(:, 3).*h0' - Normal_orth(:, 1)* Coords(:, 1)' - Normal_orth(:, 2)*Coords(:, 2)')./Normal_orth(:, 3);
+function [z] = distance_Z(coords, normal, h0)
+    normal_orth = get_orth(normal);
+    z = (normal_orth(:, 3).*h0' - normal_orth(:, 1)* coords(:, 1)' - normal_orth(:, 2)*coords(:, 2)')./normal_orth(:, 3);
     
     function [orth] = get_orth (matrix)
         orth = zeros(size(matrix, 1), size(matrix, 2));
