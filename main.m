@@ -3,9 +3,9 @@ p0 = [0, 0, 1];
 l = 1000;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 1000;                                                 
+iter = 700;                                                 
 ismin = false;                                              
-alpha = (16E-2)/1.55;
+alpha = (10E-2)/1.55;
 flux = 1;
 
 size_aper = 5;
@@ -32,9 +32,14 @@ p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
 h_0 = 8 + (12 - 8)*rand(1, refr_beams);
-params = {aperture, normals, h_0, energy_inc, energy_req, ismin, alpha, iter};
+params = struct('aperture', aperture, 'normals', normals,'matr_inc', energy_inc, 'matr_req', energy_req, ...
+    'ismin', ismin, 'iter', iter);
 %% Calculation
-[h_0, alpha, ~] = update(params{:});
+[h_0, alpha, ~] = update(params, h_0, alpha);
+%% Export to Rhino
+%export_surf2rhino(X, Y, params, h_0);
+%% Visualising
+%visual(params, h_0, alpha, normal, h);
 %% Functions
 % Create orth from a vector
 function [orth] = get_orth (matrix)

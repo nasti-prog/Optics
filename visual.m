@@ -1,4 +1,10 @@
-function [] = visual(aperture, normals, h_0, matr_inc, matr_req, ismin, alpha, normal, h)
+function [] = visual(structure, h_0, alpha, normal, h)
+    aperture = structure.aperture;
+    normals = structure.normals;
+    matr_inc = structure.matr_inc;
+    matr_req = structure.matr_req;
+    ismin = structure.ismin;
+
     subplot(2, 1, 1)
     matr_refr = trace(aperture, normals, h_0, matr_inc, ismin);
     rows = sqrt(length(matr_refr));
