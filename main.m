@@ -10,18 +10,18 @@ flux = 1;
 
 size_aper = 5;
 size_disp = 300;
-n_aper = 500;
-n_disp = 50;
+n_aper = 50;
+n_disp = 5;
 
 x = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
 [X, Y] = meshgrid(x, y);
-inc_beams = length(x)*length(y)                      
+inc_beams = length(x)*length(y);                       
 aperture = [X(:), Y(:)];                                   
 u = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;       
 v = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;  
 [U, V] = meshgrid(u, v);
-refr_beams = length(u)*length(v)                          
+refr_beams = length(u)*length(v);                          
 display = [U(:), V(:)];
 
 energy_inc = (flux) * (1/inc_beams) * ones(1, inc_beams);                           
