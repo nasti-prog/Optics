@@ -1,4 +1,5 @@
-function export_surf2rhino(x, y, structure, h_0)
+function export_surf2rhino(n, m, structure, h_0)
+    
     aperture = structure.aperture;
     normals = structure.normals;
     ismin = structure.ismin;
@@ -10,7 +11,12 @@ function export_surf2rhino(x, y, structure, h_0)
     else
         [dist, ~] = max (dist_beam);
     end
-    z = reshape(dist, sqrt(size(aperture, 1)), sqrt(size(aperture, 1)) );
+
+    %s = sqrt(length(dist));
+    x_size = -n/2: n/(n-1) :n/2;
+    y_size = -m/2: m/(m-1) :m/2;
+    [x, y] = meshgrid(x_size, y_size);
+    z = reshape(dist(1:(n*m)), n, m);
 
     [fileName, pathName] = uiputfile({'*.txt', 'Rhino script file (*.txt)'}, 'Export lens surface to Rhino');
     
@@ -20,9 +26,9 @@ function export_surf2rhino(x, y, structure, h_0)
         
         if fid > 1    
             resStr = [];
-            for j = 1 : size(x,2)
+            for j = 1 : size(x, 2)
                 resStr = [resStr '_Polyline\n'];
-                for i = 1 : size(x,1)
+                for i = 1 : size(x, 1)
                     resStr = [resStr sprintf('%f,%f,%f\n', x(i, j), y(i, j), z(i, j))];
                 end
                 resStr = [resStr '_Enter\n'];

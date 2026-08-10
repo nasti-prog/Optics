@@ -1,4 +1,4 @@
-function [] = visual(structure, h_0, alpha, normal, h)
+function [] = visual(structure, h_0)
     aperture = structure.aperture;
     normals = structure.normals;
     matr_inc = structure.matr_inc;
@@ -12,7 +12,7 @@ function [] = visual(structure, h_0, alpha, normal, h)
     imagesc(matr)
     colorbar
     colormap(gray)                       % color range: jet - rainbow
-    title_add = sprintf('RRMSE: %.4f, Alpha: %.5f', RRMSE(matr_req, matr_refr), alpha);
+    title_add = sprintf('RRMSE: %.4f', RRMSE(matr_req, matr_refr));
     title('Display', title_add);
     drawnow
     pause(1e-10)

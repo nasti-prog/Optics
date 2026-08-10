@@ -1,11 +1,10 @@
-function [h_0, alpha, error] = update(structure, h_0, alpha)
+function [h_0, alpha, error] = update(structure, h_0, alpha, iter)
     aperture = structure.aperture;
     normals = structure.normals;
     matr_inc = structure.matr_inc;
     matr_req = structure.matr_req;
     ismin = structure.ismin;
-    iter = structure.iter;
-
+    
     for count = 1:iter    
         matr_refr = trace(aperture, normals, h_0, matr_inc, ismin);
             

@@ -1,27 +1,27 @@
 %% Input data
 p0 = [0, 0, 1];
-l = 1000;                                                   
+l = 700;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 700;                                                 
+iter = 500;                                                 
 ismin = false;                                              
-alpha = (10E-2)/1.55;
+alpha = (150E-2)/1.55;
 flux = 1;
 
 size_aper = 5;
 size_disp = 300;
-n_aper = 50;
-n_disp = 5;
+n_aper = 350;
+n_disp = 35;
 
 x = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
 [X, Y] = meshgrid(x, y);
-inc_beams = length(x)*length(y);                       
+inc_beams = length(x)*length(y);                     
 aperture = [X(:), Y(:)];                                   
 u = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;       
 v = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;  
 [U, V] = meshgrid(u, v);
-refr_beams = length(u)*length(v);                          
+refr_beams = length(u)*length(v);                         
 display = [U(:), V(:)];
 
 energy_inc = (flux) * (1/inc_beams) * ones(1, inc_beams);                           
@@ -31,15 +31,14 @@ alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
-h_0 = 8 + (12 - 8)*rand(1, refr_beams);
-params = struct('aperture', aperture, 'normals', normals,'matr_inc', energy_inc, 'matr_req', energy_req, ...
-    'ismin', ismin, 'iter', iter);
+h_0 = 8 + (11 - 8)*rand(1, refr_beams);
+params = struct('aperture', aperture, 'normals', normals,'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha);
+[h_0, alpha, ~] = update(params, h_0, alpha, iter);
 %% Export to Rhino
-%export_surf2rhino(X, Y, params, h_0);
+%export_surf2rhino(n, m, params, h_0)
 %% Visualising
-%visual(params, h_0, alpha, normal, h);
+%visual(params, h_0, alpha);
 %% Functions
 % Create orth from a vector
 function [orth] = get_orth (matrix)
