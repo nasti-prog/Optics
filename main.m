@@ -9,9 +9,9 @@ alpha = (150E-2)/1.55;
 flux = 1;
 
 size_aper = 5;
-size_disp = 300;
-n_aper = 350;
-n_disp = 35;
+size_disp = 800;
+n_aper = 48;
+n_disp = 5;
 
 x = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
@@ -81,21 +81,25 @@ end
 %% Fresnel
 
 % Amplitude
-function [t] = t(n1, n2, oi, ot, type)
+function [t] = t(n1, n2, incident, refracted, normal, type)
+betta_inc = angle(incident, normal);
+betta_refr = angle(refracted, normal);
     if (type == 'p')
-        t = (2*n1*cosd(oi)/n2*cosd(oi) + n1*cosd(ot)); %p
+        t = 2*n1* cosd(betta_inc) / (n2* cosd(betta_inc) + n1* cosd(betta_refr ); %p
     else
-        t = (2*n1*cosd(oi)/n1*cosd(oi) + n2*cosd(ot)); %s
+        t = 2*n1* cosd(betta_inc) / (n1* cosd(betta_inc) + n2* cosd(betta_refr); %s
     end
 end
 
 % Energy
-function [T] = T(n1, n2, oi, ot, type)
+function [T] = T(n1, n2, incident, refracted, normal, type)
+betta_inc = angle(incident, normal);
+betta_refr = angle(refracted, normal);
     if type == 'p'
-        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t(n1, n2, oi, ot, "p") )^2; %p
+        T = (n2*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "p") )^2; %p
     elseif type == 's'
-        T = (n2*cosd(ot)/n1*cosd(oi))* abs( t(n1, n2, oi, ot, "s") )^2; %s
+        T = (n2*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "s") )^2; %s
     else
-        T = (n2*cosd(ot)/n1*cosd(oi))* 0.5 * (abs( t(n1, n2, oi, ot, "s") )^2 + abs( t(n1, n2, oi, ot, "p") )^2); %unpolarized
+        T = (n2*cosd(betta_refr)/n1*cosd(betta_inc))* 0.5 * (abs( t(n1, n2, incident, refracted, normal, "s") )^2 + abs( t(n1, n2, incident, refracted, normal, "p") )^2); %unpolarized
     end
 end
