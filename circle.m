@@ -20,7 +20,8 @@ display = [u(:), v(:)];
 
 energy_inc = (1/inc_beams) * (flux) * ones(1, inc_beams);                           
 energy_req = (1/refr_beams) * (flux) * ones(1, refr_beams);
-imagesc(display)
-colorbar
+energy_full = (circle_mask) * (flux) * (1/refr_beams);
 
 alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
+%energy_full = zeros(size(U));
+%energy_full(circle_mask) = energy_req;
