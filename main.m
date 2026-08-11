@@ -5,36 +5,48 @@ n1 = 1.493;
 n2 = 1;
 iter = 500;                                                 
 ismin = false;                                              
-alpha = (150E-2)/1.55;
+alpha = (1000E-2)/1.55;
 flux = 1;
 
 size_aper = 5;
 size_disp = 800;
-n_aper = 48;
-n_disp = 5;
+n_aper = 400;
+n_disp = 40;
 
 x = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
 [X, Y] = meshgrid(x, y);
 inc_beams = length(x)*length(y);                     
-aperture = [X(:), Y(:)];                                   
-u = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;       
-v = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;  
-[U, V] = meshgrid(u, v);
-refr_beams = length(u)*length(v);                         
-display = [U(:), V(:)];
+aperture = [X(:), Y(:)];
 
-energy_inc = (flux) * (1/inc_beams) * ones(1, inc_beams);                           
-energy_req = (flux) * (1/refr_beams) * ones(1, refr_beams);
-alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
+u_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;       
+v_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;
+[U, V] = meshgrid(u_square, v_square);
+circle_mask = (U.^2 + V.^2) <= (size_disp/2)^2;
+u = U(circle_mask);
+v = V(circle_mask);
+refr_beams = length(v);                         
+display = [u(:), v(:)];
 
+energy_inc = (1/inc_beams) * (flux) * ones(1, inc_beams);                          
+energy_req = (1/refr_beams) * (flux) * ones(1, refr_beams);
+
+%alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
+
+%fresnel_koeff = T(n1, n2, p_0, p1, normals, "unpol")';
+%fresnel_delta = fresnel_koeff(1, :) .* energy_req;
+%flux = sum(fresnel_delta) + flux;
+%energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);                           
+%energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
+%energy_full = (circle_mask) .* (flux) .* (1/refr_beams);
+
 h_0 = 8 + (11 - 8)*rand(1, refr_beams);
 params = struct('aperture', aperture, 'normals', normals,'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha, iter);
+[h_0, alpha, ~] = update(params, h_0, alpha, iter, size_disp, n_disp);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0)
 %% Visualising
@@ -85,9 +97,9 @@ function [t] = t(n1, n2, incident, refracted, normal, type)
 betta_inc = angle(incident, normal);
 betta_refr = angle(refracted, normal);
     if (type == 'p')
-        t = 2*n1* cosd(betta_inc) / (n2* cosd(betta_inc) + n1* cosd(betta_refr ); %p
+        t = 2.*n1.* cosd(betta_inc) ./ (n2.* cosd(betta_inc) + n1.* cosd(betta_refr) ); %p
     else
-        t = 2*n1* cosd(betta_inc) / (n1* cosd(betta_inc) + n2* cosd(betta_refr); %s
+        t = 2.*n1.* cosd(betta_inc) ./ (n1.* cosd(betta_inc) + n2.* cosd(betta_refr) ); %s
     end
 end
 
@@ -96,10 +108,10 @@ function [T] = T(n1, n2, incident, refracted, normal, type)
 betta_inc = angle(incident, normal);
 betta_refr = angle(refracted, normal);
     if type == 'p'
-        T = (n2*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "p") )^2; %p
+        T = (n2.*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "p") )^2; %p
     elseif type == 's'
-        T = (n2*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "s") )^2; %s
+        T = (n2.*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "s") )^2; %s
     else
-        T = (n2*cosd(betta_refr)/n1*cosd(betta_inc))* 0.5 * (abs( t(n1, n2, incident, refracted, normal, "s") )^2 + abs( t(n1, n2, incident, refracted, normal, "p") )^2); %unpolarized
+        T = (n2.*cosd(betta_refr)./n1.*cosd(betta_inc)).* 0.5 .* (abs( t(n1, n2, incident, refracted, normal, "s") ).^2 + abs( t(n1, n2, incident, refracted, normal, "p") ).^2); %unpolarized
     end
 end
