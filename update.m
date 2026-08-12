@@ -1,4 +1,4 @@
-function [h_0, alpha, error] = update(structure, h_0, alpha, iter)
+function [h_0, alpha, error] = update(structure, h_0, alpha, iter, size_disp, n_disp)
     aperture = structure.aperture;
     normals = structure.normals;
     matr_inc = structure.matr_inc;
@@ -13,7 +13,7 @@ function [h_0, alpha, error] = update(structure, h_0, alpha, iter)
         h_0 = update_h_0(ismin, alpha, h_0, matr_req, matr_refr);
             
         subplot(2, 1, 1)
-        lumi_map(matr_refr, count, error(1, count), alpha)
+        lumi_map(matr_refr, count, error(1, count), alpha, size_disp, n_disp)
      end
      subplot(2, 1, 2)
      plot(error)
