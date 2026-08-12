@@ -1,10 +1,14 @@
-function export_surf2rhino(n, m, structure, h_0)
+function export_surf2rhino(n, m, structure, h_0, size_aper)
     
-    aperture = structure.aperture;
     normals = structure.normals;
     ismin = structure.ismin;
 
-    dist_beam = distance_Z(aperture, normals, h_0);
+    x_size = -size_aper/2: size_aper/(n-1) :size_aper/2;
+    y_size = -size_aper/2: size_aper/(m-1) :size_aper/2;      
+    [x, y] = meshgrid(x_size, y_size);                    
+    aperture_new = [x(:), y(:)];
+
+    dist_beam = distance_Z(aperture_new, normals, h_0);
     
     if ismin
         [dist, ~] = min (dist_beam);
@@ -12,11 +16,8 @@ function export_surf2rhino(n, m, structure, h_0)
         [dist, ~] = max (dist_beam);
     end
 
-    %s = sqrt(length(dist));
-    x_size = -n/2: n/(n-1) :n/2;
-    y_size = -m/2: m/(m-1) :m/2;
-    [x, y] = meshgrid(x_size, y_size);
-    z = reshape(dist(1:(n*m)), n, m);
+    s = sqrt(length(dist));
+    z = reshape(dist, s, s);
 
     [fileName, pathName] = uiputfile({'*.txt', 'Rhino script file (*.txt)'}, 'Export lens surface to Rhino');
     
