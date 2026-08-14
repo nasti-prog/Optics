@@ -36,19 +36,41 @@ p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
 
+inc_val = angle(p_0, normals);
+sin_refracted = (n1 .* sind(inc_val) );
+count = 0;
+for i = 1:length (sin_refracted)
+    if sin_refracted(i) > 1
+        count = count + 1;
+        fprintf('%d Angle: %1.3f - Полное внутреннее отражение\n', count, inc_val(i));       
+    end
+end
+fprintf(" Кол-во пво: %d\n", count);
+%fprintf('sin refracted: %.3f\n', sin_refracted);
+
+%%Fresnel v1
+fresnel_koeff = T(n1, n2, p_0, p1, normals, "unpol")';
+fresnel_delta = fresnel_koeff .* energy_req;
+flux_i = sum(fresnel_delta) + flux;
+energy_inc = (1/inc_beams) .* (flux_i) .* ones(1, inc_beams);                           
+energy_req = (1/refr_beams) .* (flux.*ones(1, refr_beams) + fresnel_delta);
+
+%%Fresnel v2
 %fresnel_koeff = T(n1, n2, p_0, p1, normals, "unpol")';
-%fresnel_delta = fresnel_koeff(1, :) .* energy_req;
+%fresnel_delta = fresnel_koeff .* energy_req;
 %flux = sum(fresnel_delta) + flux;
 %energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);                           
 %energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
-%energy_full = (circle_mask) .* (flux) .* (1/refr_beams);
+
+energy_full = (circle_mask) .* (flux_i) .* (1/refr_beams);
 
 h_0 = 8 + (11 - 8)*rand(1, refr_beams);
+
 params = struct('aperture', aperture, 'normals', normals,'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha, iter, size_disp, n_disp);
+%[h_0, alpha, ~] = update(params, h_0, alpha, iter, size_disp, n_disp);
 %% Export to Rhino
-%export_surf2rhino(n, m, params, h_0)
+%export_surf2rhino(n, m, params, h_0, size_aper)
 %% Visualising
 %visual(params, h_0, alpha);
 %% Functions
@@ -70,9 +92,9 @@ end
 % Angle by row
 function [alpha] = angle(mat1, mat2)
     m1 = get_orth(mat1);    m2 = get_orth(mat2);
-    alpha = zeros(size(mat1, 1), size(mat1, 2));
+    alpha = zeros(size(mat1, 1),1);
     for e = 1 : size(mat1, 1)
-        alpha(e, :) = acosd(dot(m1(e, :), m2(e, :)));
+        alpha(e, :) = acosd(dot(m1(e, :), m2(e, :), 2));
     end
 end
 
