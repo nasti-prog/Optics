@@ -10,8 +10,8 @@ flux = 1;
 
 size_aper = 5;
 size_disp = 800;
-n_aper = 400;
-n_disp = 40;
+n_aper = 700;
+n_disp = 70;
 
 x = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
@@ -22,7 +22,12 @@ aperture = [X(:), Y(:)];
 u_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;       
 v_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;
 [U, V] = meshgrid(u_square, v_square);
-circle_mask = (U.^2 + V.^2) <= (size_disp/2)^2;
+area = U.^2 + V.^2;
+length(u_square)
+r_inner = (size_disp/2 - length(u_square) * 3.5)
+r_outer = (length(u_square) * 4.5)
+circle_mask = ( (area <= (size_disp/2)^2) ) & ~( (r_inner^2 <= area) & (area <= r_outer^2) );
+imagesc(circle_mask)
 u = U(circle_mask);
 v = V(circle_mask);
 refr_beams = length(v);                         
@@ -35,40 +40,15 @@ energy_req = (1/refr_beams) * (flux) * ones(1, refr_beams);
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
-
-inc_val = angle(p_0, normals);
-sin_refracted = (n1 .* sind(inc_val) );
-count = 0;
-for i = 1:length (sin_refracted)
-    if sin_refracted(i) > 1
-        count = count + 1;
-        fprintf('%d Angle: %1.3f - Полное внутреннее отражение\n', count, inc_val(i));       
-    end
-end
-fprintf(" Кол-во пво: %d\n", count);
-%fprintf('sin refracted: %.3f\n', sin_refracted);
-
-%%Fresnel v1
-fresnel_koeff = T(n1, n2, p_0, p1, normals, "unpol")';
-fresnel_delta = fresnel_koeff .* energy_req;
-flux_i = sum(fresnel_delta) + flux;
-energy_inc = (1/inc_beams) .* (flux_i) .* ones(1, inc_beams);                           
-energy_req = (1/refr_beams) .* (flux.*ones(1, refr_beams) + fresnel_delta);
-
-%%Fresnel v2
-%fresnel_koeff = T(n1, n2, p_0, p1, normals, "unpol")';
-%fresnel_delta = fresnel_koeff .* energy_req;
-%flux = sum(fresnel_delta) + flux;
-%energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);                           
-%energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
-
-energy_full = (circle_mask) .* (flux_i) .* (1/refr_beams);
-
 h_0 = 8 + (11 - 8)*rand(1, refr_beams);
+error = zeros(1, iter);
 
-params = struct('aperture', aperture, 'normals', normals,'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
+total_reflection(n1, p_0, normals);
+%% Fresnel
+[energy_inc, energy_req] = fresnel(flux, energy_req, inc_beams, refr_beams, n1, n2, p_0, p1, normals);
+params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-%[h_0, alpha, ~] = update(params, h_0, alpha, iter, size_disp, n_disp);
+[h_0, alpha, ~] = update(params, h_0, alpha, iter, error, u_square, circle_mask);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Visualising
@@ -111,29 +91,4 @@ function [i] = visual_plane(Normal, h0)
     y = 0:1:5;
     z = ( - Normal(1, 1) * x - Normal(1, 2) * y + Normal(1, 3) * h0 ) / Normal(1, 3);
     i = plot(x, z);  
-end
-%% Fresnel
-
-% Amplitude
-function [t] = t(n1, n2, incident, refracted, normal, type)
-betta_inc = angle(incident, normal);
-betta_refr = angle(refracted, normal);
-    if (type == 'p')
-        t = 2.*n1.* cosd(betta_inc) ./ (n2.* cosd(betta_inc) + n1.* cosd(betta_refr) ); %p
-    else
-        t = 2.*n1.* cosd(betta_inc) ./ (n1.* cosd(betta_inc) + n2.* cosd(betta_refr) ); %s
-    end
-end
-
-% Energy
-function [T] = T(n1, n2, incident, refracted, normal, type)
-betta_inc = angle(incident, normal);
-betta_refr = angle(refracted, normal);
-    if type == 'p'
-        T = (n2.*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "p") )^2; %p
-    elseif type == 's'
-        T = (n2.*cosd(betta_refr)/n1*cosd(betta_inc))* abs( t(n1, n2, incident, refracted, normal, "s") )^2; %s
-    else
-        T = (n2.*cosd(betta_refr)./n1.*cosd(betta_inc)).* 0.5 .* (abs( t(n1, n2, incident, refracted, normal, "s") ).^2 + abs( t(n1, n2, incident, refracted, normal, "p") ).^2); %unpolarized
-    end
 end
