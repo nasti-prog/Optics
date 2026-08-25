@@ -1,17 +1,17 @@
 %% Input data
 p0 = [0, 0, 1];
-l = 700;                                                   
+l = 2000;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 500;                                                 
+iter = 300;                                                 
 ismin = false;                                              
 alpha = (1000E-2)/1.55;
 flux = 1;
 
 size_aper = 5;
-size_disp = 800;
+size_disp = 3300;
 n_aper = 700;
-n_disp = 70;
+n_disp = 56;
 
 x = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
@@ -21,15 +21,22 @@ aperture = [X(:), Y(:)];
 
 u_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;       
 v_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;
+
+step = size_disp/(n_disp-1);
 [U, V] = meshgrid(u_square, v_square);
-area = U.^2 + V.^2;
-length(u_square)
-r_inner = (size_disp/2 - length(u_square) * 3.5)
-r_outer = (length(u_square) * 4.5)
-circle_mask = ( (area <= (size_disp/2)^2) ) & ~( (r_inner^2 <= area) & (area <= r_outer^2) );
-imagesc(circle_mask)
-u = U(circle_mask);
-v = V(circle_mask);
+i_center = ceil(n_disp/2);
+req_inds_vec = 1 : round((n_disp-1)/(10-1)):n_disp;
+mask = zeros(size(U));
+mask(i_center, req_inds_vec) = 1;
+mask(req_inds_vec, i_center) = 1;
+mask = boolean(mask);
+% area = U.^2 + V.^2;
+% center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
+% mask = ((U==center)|(V==center)) & (area <=(5*step)^2); 
+imagesc(mask)
+axis equal
+u = U(mask);
+v = V(mask);
 refr_beams = length(v);                         
 display = [u(:), v(:)];
 
@@ -41,14 +48,13 @@ p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
 h_0 = 8 + (11 - 8)*rand(1, refr_beams);
-error = zeros(1, iter);
 
 total_reflection(n1, p_0, normals);
 %% Fresnel
 [energy_inc, energy_req] = fresnel(flux, energy_req, inc_beams, refr_beams, n1, n2, p_0, p1, normals);
 params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha, iter, error, u_square, circle_mask);
+[h_0, alpha, ~] = update(params, h_0, alpha, iter, u_square, mask);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Visualising
