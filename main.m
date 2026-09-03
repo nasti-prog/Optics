@@ -3,9 +3,9 @@ p0 = [0, 0, 1];
 l = 2000;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 300;                                                 
+iter = 150;                                                 
 ismin = false;                                              
-alpha = (1000E-2)/1.55;
+alpha = 40;
 flux = 1;
 
 size_aper = 5;
@@ -19,42 +19,37 @@ y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 inc_beams = length(x)*length(y);                     
 aperture = [X(:), Y(:)];
 
-u_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;       
-v_square = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;
+psi_max = deg2rad(35);
+n_psi = 10;
+phi = pi/4;
+psi = -psi_max:2*psi_max/(n_psi-1):psi_max;
+[phi, psi] = meshgrid(phi, psi);
+mask = logical(ones(size(phi)));
+r = l ./ cos(psi);
+U = r .* sin(psi) .* cos(phi);
+V = r .* sin(psi) .* sin(phi);
 
-step = size_disp/(n_disp-1);
-[U, V] = meshgrid(u_square, v_square);
-i_center = ceil(n_disp/2);
-req_inds_vec = 1 : round((n_disp-1)/(10-1)):n_disp;
-mask = zeros(size(U));
-mask(i_center, req_inds_vec) = 1;
-mask(req_inds_vec, i_center) = 1;
-mask = boolean(mask);
-% area = U.^2 + V.^2;
-% center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
-% mask = ((U==center)|(V==center)) & (area <=(5*step)^2); 
-imagesc(mask)
-axis equal
 u = U(mask);
-v = V(mask);
-refr_beams = length(v);                         
+v = V(mask);            
 display = [u(:), v(:)];
+refr_beams = size(display, 1); 
 
-energy_inc = (1/inc_beams) * (flux) * ones(1, inc_beams);                          
 energy_req = (1/refr_beams) * (flux) * ones(1, refr_beams);
 
 %alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
-h_0 = 8 + (11 - 8)*rand(1, refr_beams);
+h_0 = 5*ones(1, refr_beams);
 
 total_reflection(n1, p_0, normals);
 %% Fresnel
-[energy_inc, energy_req] = fresnel(flux, energy_req, inc_beams, refr_beams, n1, n2, p_0, p1, normals);
+[energy_req, flux] = fresnel(flux, energy_req, n1, n2, p_0, p1, normals);
+
+energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);  
 params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha, iter, u_square, mask);
+[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Visualising
@@ -62,7 +57,7 @@ params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc
 %% Functions
 % Create orth from a vector
 function [orth] = get_orth (matrix)
-orth = zeros(size(matrix, 1), size(matrix, 2));
+    orth = zeros(size(matrix, 1), size(matrix, 2));
     for e = 1 : size(matrix, 1)
         len = sqrt(dot(matrix(e, :), matrix(e, :)));
         orth(e, :) = matrix(e, :)/len;
@@ -78,7 +73,7 @@ end
 % Angle by row
 function [alpha] = angle(mat1, mat2)
     m1 = get_orth(mat1);    m2 = get_orth(mat2);
-    alpha = zeros(size(mat1, 1),1);
+    alpha = zeros(size(mat1, 1), 1);
     for e = 1 : size(mat1, 1)
         alpha(e, :) = acosd(dot(m1(e, :), m2(e, :), 2));
     end
@@ -98,3 +93,27 @@ function [i] = visual_plane(Normal, h0)
     z = ( - Normal(1, 1) * x - Normal(1, 2) * y + Normal(1, 3) * h0 ) / Normal(1, 3);
     i = plot(x, z);  
 end
+
+% Amplitude
+function [t_amp] = t(n1, n2, incident, refracted, normal, type)
+    betta_inc = angle(incident, normal);
+    betta_refr = angle(normal, refracted);
+    if (type == 'p')
+        t_amp = (2.*n1.* cosd(betta_inc)) ./ (n2.* cosd(betta_inc) + n1.* cosd(betta_refr) ); %p
+    else
+        t_amp = (2.*n1.* cosd(betta_inc)) ./ (n1.* cosd(betta_inc) + n2.* cosd(betta_refr)); %s
+    end
+end
+    
+ % Energy
+ function [T_en] = T(n1, n2, incident, refracted, normal, type)
+    betta_inc = angle(incident, normal);
+    betta_refr = angle(normal, refracted);
+    if type == 'p'
+        T_en = (n2.*cosd(betta_refr)./(n1.*cosd(betta_inc))).* (abs( t(n1, n2, incident, refracted, normal, "p") ).^2); %p
+    elseif type == 's'
+        T_en = (n2.*cosd(betta_refr)./(n1.*cosd(betta_inc))).* (abs( t(n1, n2, incident, refracted, normal, "s") ).^2); %s
+    else
+        T_en = (n2.*cosd(betta_refr)./(n1.*cosd(betta_inc))).* 0.5 .* ( (abs( t(n1, n2, incident, refracted, normal, "s") ).^2) + (abs( t(n1, n2, incident, refracted, normal, "p") ).^2) ); %unpolarized
+    end
+ end
