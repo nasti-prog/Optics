@@ -3,9 +3,9 @@ p0 = [0, 0, 1];
 l = 2000;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 150;                                                 
+iter = 200;                                                 
 ismin = false;                                              
-alpha = 40;
+alpha = 50;
 flux = 1;
 
 size_aper = 5;
@@ -19,16 +19,23 @@ y = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 inc_beams = length(x)*length(y);                     
 aperture = [X(:), Y(:)];
 
+%u_s = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;
+%v_s = -size_disp/2: size_disp/(n_disp-1) :size_disp/2;      
+%[U, V] = meshgrid(u_s, v_s);
+
 psi_max = deg2rad(35);
 n_psi = 10;
 phi = pi/4;
 psi = -psi_max:2*psi_max/(n_psi-1):psi_max;
 [phi, psi] = meshgrid(phi, psi);
 mask = logical(ones(size(phi)));
+
 r = l ./ cos(psi);
 U = r .* sin(psi) .* cos(phi);
 V = r .* sin(psi) .* sin(phi);
 
+
+imagesc(mask)
 u = U(mask);
 v = V(mask);            
 display = [u(:), v(:)];

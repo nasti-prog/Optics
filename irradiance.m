@@ -1,16 +1,9 @@
-function [max_angle_inc, max_angle_refr] = total_reflection(n1, p_0, normals)
-    inc_val = angle(p_0, normals);
-    sin_refracted = ( n1 .* sind(inc_val) );
-    max_angle_inc = max(inc_val);
-    max_angle_refr = max( asind(sin_refracted));
-    count = 0;
-    for i = 1:length(sin_refracted)
-        if sin_refracted(i) > 1
-            count = count + 1;
-            fprintf('%d Angle: %1.3f - Полное внутреннее отражение\n', count, inc_val(i));       
-        end
-    end
-    fprintf("Кол-во пво: %d\n", count);
+function [relative_irr] = irradiance (p_0, normals, l, size_disp)
+    r1 =  sqrt(l^2 + (size_disp^2/2));  %расстояние до крайней точки
+    r2 = l;
+    inc_val = angle(p_0(1, :), normals(1, :));
+    tetta1 = sind( n1 .* sind(inc_val) );
+    relative_irr = cosd(tetta1) * (r2/r1)^2;
 
     % Angle by row
     function [alpha] = angle(mat1, mat2)
