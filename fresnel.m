@@ -1,8 +1,8 @@
-function [energy_req, flux] = fresnel(flux, energy_req, n1, n2, p_0, p1, normals)
-    fresnel_loss = 1 - T(n1, n2, p_0, p1, normals, "unpol")';
+function [energy_req, flux, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals)
     fresnel_unloss = T(n1, n2, p_0, p1, normals, "unpol")';
+    eff = sum(energy_req .* fresnel_unloss)/sum(energy_req);
     energy_req = energy_req ./ fresnel_unloss;
-    flux = sum(energy_req.*fresnel_loss) + flux;
+    flux = sum(energy_req);
     
     % Amplitude
     function [t_amp] = t(n1, n2, incident, refracted, normal, type)

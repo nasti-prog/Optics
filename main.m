@@ -49,14 +49,20 @@ p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
 h_0 = 5*ones(1, refr_beams);
 
+inc_val = angle(p_0, normals);
+sin_refracted = ( n1 .* sind(inc_val) );
+refr_val = asind(sin_refracted);
+max_angle_inc = max(inc_val);
+max_angle_refr = max( asind(sin_refracted));
+
 total_reflection(n1, p_0, normals);
 %% Fresnel
-[energy_req, flux] = fresnel(flux, energy_req, n1, n2, p_0, p1, normals);
-
+[energy_req, flux, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals);
+fresnel_unloss = T(n1, n2, p_0, p1, normals, "unpol")';
 energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);  
 params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
+%[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Visualising
