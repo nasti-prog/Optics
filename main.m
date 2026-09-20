@@ -5,13 +5,13 @@ n1 = 1.493;
 n2 = 1;
 iter = 200;                                                 
 ismin = false;                                              
-alpha = 30;
+alpha = 70;
 flux = 1;
 
 size_aper = 5;
 size_disp = 3300;
-n_aper = 700;
-n_disp = 70;
+n_aper = 650;
+n_disp = 65;
 
 x_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
@@ -26,15 +26,18 @@ step = size_disp/(n_disp-1);
 u_square = -size_disp/2: step :size_disp/2;      
 v_square = -size_disp/2: step :size_disp/2;
 [U, V] = meshgrid(u_square, v_square);
-center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
-mask = V == center; 
+[distr, image] = req_distr_from_image([], [size(U)], 1);
+mask = image(:, :, 1); 
 u = U(mask);
 v = V(mask);            
 display = [u(:), v(:)];
-refr_beams = size(display, 1); 
+refr_beams = size(display, 1);
 
-energy_req = (1/refr_beams) * (flux) * ones(1, refr_beams);
+energy_req = reshape(distr, 1, refr_beams);
+
+%energy_req = (1/refr_beams) * (flux) * ones(1, refr_beams);
 %alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
+
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
@@ -44,11 +47,11 @@ h_0 = 5*ones(1, refr_beams);
 %% Fresnel
 %[energy_req, T, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals);
 %% Data
-flux = sum(energy_req);
+flux = sum(energy_req)
 energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);
 params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
+%[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Visualising

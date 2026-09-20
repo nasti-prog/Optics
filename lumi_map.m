@@ -1,5 +1,5 @@
 function [] = lumi_map(matrix, count, error, alpha, mask)
-    matr = zeros(size(mask, 1));
+    matr = zeros(size(mask));
     matr(mask) = matrix;
     imagesc(matr);
     colorbar;

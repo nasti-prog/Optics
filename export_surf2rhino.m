@@ -1,10 +1,11 @@
 function export_surf2rhino(n, m, structure, h_0, size_aper)
-    
     normals = structure.normals;
     ismin = structure.ismin;
 
-    x_size = -size_aper/2: size_aper/(n-1) :size_aper/2;
-    y_size = -size_aper/2: size_aper/(m-1) :size_aper/2;      
+    new_size = size_aper + 10;
+   
+    x_size = -new_size/2: new_size/(n-1) :new_size/2;
+    y_size = -new_size/2: new_size/(m-1) :new_size/2;      
     [x, y] = meshgrid(x_size, y_size);                    
     aperture_new = [x(:), y(:)];
 
