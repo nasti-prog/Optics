@@ -51,7 +51,7 @@ flux = sum(energy_req)
 energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);
 params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin);
 %% Calculation
-%[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
+[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Visualising
