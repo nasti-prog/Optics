@@ -9,6 +9,9 @@ function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_whi
         [f, p] = uigetfile({'*.*', 'Image files (*.*)'}, 'Import required image');
         file_name = [p f];
     end
+
+    % чтение изображения
+    % I - массив изображ, alpha_channel - например PNG (прозрачность)
     [I,~,alpha_channel] = imread(file_name);
 
     if ~isempty(distr_size)
@@ -18,8 +21,11 @@ function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_whi
             alpha_channel = imresize(alpha_channel,distr_size);
         end
     end
-    image = I;
 
+    % сохраняем изображение
+    image = I;
+    
+    % усреднение по цветовым канал
     distr = mean(I,3);
     if ~is_max_white
         max_val = max(image(:));
@@ -33,4 +39,3 @@ function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_whi
     
     distr = distr / sum(distr(:));
 end
-
