@@ -11,7 +11,7 @@ function [max_angle_inc, max_angle_refr] = total_reflection(n1, p_0, normals)
         end
     end
     fprintf("Кол-во пво: %d\n", count);
-
+    
     % Angle by row
     function [alpha] = angle(mat1, mat2)
         m1 = get_orth(mat1);    m2 = get_orth(mat2);
