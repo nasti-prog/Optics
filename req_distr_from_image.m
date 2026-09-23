@@ -1,8 +1,9 @@
-function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_white)
+function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_white, en_rel_threshold)
     arguments
        file_name string = []
        distr_size double = []
        is_max_white = true
+       en_rel_threshold double = 0.05
     end
 
     if (isempty(file_name))
@@ -28,8 +29,10 @@ function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_whi
     % усреднение по цветовым канал
     distr = mean(I,3);
     if ~is_max_white
-        max_val = max(image(:));
-        image = max_val - image;
+        max_val = max(distr(:));
+        distr = max_val - distr;
+    else
+        distr = distr - min(distr(:));
     end
 
     if ~isempty(alpha_channel) && any(alpha_channel(:))
@@ -37,5 +40,7 @@ function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_whi
         distr(~distr_mask) = 0;
     end
     
+    en_threshold = min(distr(:)) + en_rel_threshold * (max(distr(:))-min(distr(:)));
+    distr(distr<en_threshold) = 0;
     distr = distr / sum(distr(:));
 end
