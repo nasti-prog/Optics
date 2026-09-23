@@ -1,8 +1,7 @@
 function export_surf2rhino(n, m, structure, h_0, size_aper)
     normals = structure.normals;
     ismin = structure.ismin;
-
-    new_size = size_aper + 10;
+    new_size = 1.03 * size_aper;
    
     x_size = -new_size/2: new_size/(n-1) :new_size/2;
     y_size = -new_size/2: new_size/(m-1) :new_size/2;      
