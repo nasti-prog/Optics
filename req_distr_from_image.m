@@ -3,7 +3,7 @@ function [distr, image] = req_distr_from_image(file_name, distr_size, is_max_whi
        file_name string = []
        distr_size double = []
        is_max_white = true
-       en_rel_threshold double = 0.05
+       en_rel_threshold double = 0.3
     end
 
     if (isempty(file_name))
