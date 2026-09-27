@@ -27,12 +27,6 @@ u_square = -size_disp/2: step :size_disp/2;
 v_square = -size_disp/2: step :size_disp/2;
 [U, V] = meshgrid(u_square, v_square);
 [distr, ~] = req_distr_from_image([], [size(U)], 0);
-
-%rel_smooth_koeff = 0.34;
-%abs_smooth_koeff = min(distr(:)) +  rel_smooth_koeff * (max(distr(:))-min(distr(:)));
-%distr(distr<abs_smooth_koeff) = 0;
-%distr = distr / sum(distr(:));
-
 mask = distr > 0;
 u = U(mask);
 v = V(mask);          
@@ -51,18 +45,18 @@ h_0 = 5*ones(1, refr_beams);
 
 [max_angle_inc, max_angle_refr] = total_reflection(n1, p_0, normals);
 %% Fresnel
-[energy_req, T, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals);
+%[energy_req, T, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals);
 %% Data
 flux = sum(energy_req);
 energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);
 
 params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin, 'size_aper', size_aper);
 %% Calculation
-%[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
+[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Save Project
-%save project_name, params, n1, n2, p_0, p1, h_0, mask, alpha,circle_mask,flux, inc_beams, refr_beams, l, n_aper, n_disp, rel_smooth,size_disp, T, eff, x, y, u, v
+%save project_name, params, n1, n2, p_0, p1, h_0, mask, alpha,circle_mask,flux, inc_beams, refr_beams, l, n_aper, n_disp, size_disp, T, eff, x, y, u, v
 %% Visualising
 %visual(params, h_0, alpha);
 %% Functions
