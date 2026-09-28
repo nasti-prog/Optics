@@ -17,9 +17,7 @@ x_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
 [X, Y] = meshgrid(x_square, y_square);     
 circle_mask = X.^2 + Y.^2 <= (size_aper/2)^2; 
-x = X(circle_mask);
-y = Y(circle_mask);  
-aperture = [x(:), y(:)];
+aperture = [X(circle_mask), Y(circle_mask)];
 inc_beams = size(aperture, 1);
 
 step = size_disp/(n_disp-1);
@@ -27,13 +25,11 @@ u_square = -size_disp/2: step :size_disp/2;
 v_square = -size_disp/2: step :size_disp/2;
 [U, V] = meshgrid(u_square, v_square);
 [distr, ~] = req_distr_from_image([], [size(U)], 0);
-mask = distr > 0;
-u = U(mask);
-v = V(mask);          
-display = [u(:), v(:)];
+mask = distr > 0;      
+display = [U(mask), V(mask)];
 refr_beams = size(display, 1);
 
-energy_req = distr(distr ~= 0)';
+energy_req = distr(mask)';
 energy_req = sum(energy_req(:)) * (1/refr_beams) * ones(1, refr_beams);
 
 %alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
