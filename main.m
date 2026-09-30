@@ -5,37 +5,40 @@ n1 = 1.493;
 n2 = 1;
 iter = 200;                                                 
 ismin = false;                                              
-alpha = 50;
+alpha = 10;
 flux = 1;
 
 size_aper = 5;
 size_disp = 3300;
-n_aper = 256;
-n_disp = 152;
+n_aper = 700;
+n_disp = 70;
 
 x_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
 [X, Y] = meshgrid(x_square, y_square);     
-circle_mask = X.^2 + Y.^2 <= (size_aper/2)^2; 
-x = X(circle_mask);
-y = Y(circle_mask);  
+aper_circle_mask = X.^2 + Y.^2 <= (size_aper/2)^2; 
+x = X(aper_circle_mask);
+y = Y(aper_circle_mask);  
 aperture = [x(:), y(:)];
 inc_beams = size(aperture, 1);
 
+% Horizontal on center
 step = size_disp/(n_disp-1);
 u_square = -size_disp/2: step :size_disp/2;      
 v_square = -size_disp/2: step :size_disp/2;
 [U, V] = meshgrid(u_square, v_square);
-[distr, ~] = req_distr_from_image([], [size(U)], 0);
-mask = distr > 0;
+center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
+mask = V == center; 
 u = U(mask);
-v = V(mask);          
+v = V(mask);            
 display = [u(:), v(:)];
 refr_beams = size(display, 1);
+replace_koeff = n2./(n1 .* sqrt(display(:, 1).^2 + display(:, 2).^2 + repmat(l, refr_beams, 1).^2) - n2.*l );
+p = replace_koeff .* display(:, 1);
+q = replace_koeff .* display(:, 2);
+display_replace = [p(:), q(:)];
 
-energy_req = distr(distr ~= 0)';
-energy_req = sum(energy_req(:)) * (1/refr_beams) * ones(1, refr_beams);
-
+energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
 %alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
@@ -46,11 +49,11 @@ h_0 = 5*ones(1, refr_beams);
 [max_angle_inc, max_angle_refr] = total_reflection(n1, p_0, normals);
 %% Fresnel
 %[energy_req, T, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals);
+%flux = sum(energy_req);
 %% Data
-flux = sum(energy_req);
 energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);
-
-params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, 'ismin', ismin, 'size_aper', size_aper);
+params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, ...
+    'ismin', ismin, 'size_aper', size_aper);
 %% Calculation
 [h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
 %% Export to Rhino
