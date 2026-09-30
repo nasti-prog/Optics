@@ -29,7 +29,7 @@ function [] = masks()
     refr_beams = length(v);                         
     display = [u(:), v(:)];
     
-    %diagonal
+    % diagonal
     psi_max = deg2rad(35);
     n_psi = 10;
     phi = pi/4;
@@ -51,5 +51,19 @@ function [] = masks()
     v = V(mask);            
     display = [u(:), v(:)];
     refr_beams = size(display, 1); 
+
+    % Image from inet
+    step = size_disp/(n_disp-1);
+    u_square = -size_disp/2: step :size_disp/2;      
+    v_square = -size_disp/2: step :size_disp/2;
+    [U, V] = meshgrid(u_square, v_square);
+    [distr, ~] = req_distr_from_image([], [size(U)], 0);
+    mask = distr > 0;
+    u = U(mask);
+    v = V(mask);          
+    display = [u(:), v(:)];
+    refr_beams = size(display, 1);
+    energy_req = distr(distr ~= 0)';
+    energy_req = sum(energy_req(:)) * (1/refr_beams) * ones(1, refr_beams);
 
 end
