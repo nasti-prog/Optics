@@ -6,6 +6,7 @@ n2 = 1;
 iter = 200;                                                 
 ismin = false;                                              
 alpha = 10;
+%alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 flux = 1;
 
 size_aper = 5;
@@ -15,11 +16,9 @@ n_disp = 70;
 
 x_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
-[X, Y] = meshgrid(x_square, y_square);     
+[X, Y] = meshgrid(x_square, y_square);
 aper_circle_mask = X.^2 + Y.^2 <= (size_aper/2)^2; 
-x = X(aper_circle_mask);
-y = Y(aper_circle_mask);  
-aperture = [x(:), y(:)];
+aperture = [X(aper_circle_mask), Y(aper_circle_mask)];
 inc_beams = size(aperture, 1);
 
 % Horizontal on center
@@ -29,17 +28,15 @@ v_square = -size_disp/2: step :size_disp/2;
 [U, V] = meshgrid(u_square, v_square);
 center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
 mask = V == center; 
-u = U(mask);
-v = V(mask);            
-display = [u(:), v(:)];
+display = [U(mask), V(mask)];
 refr_beams = size(display, 1);
+
 replace_koeff = n2./(n1 .* sqrt(display(:, 1).^2 + display(:, 2).^2 + repmat(l, refr_beams, 1).^2) - n2.*l );
 p = replace_koeff .* display(:, 1);
 q = replace_koeff .* display(:, 2);
 display_replace = [p(:), q(:)];
 
 energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
-%alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
