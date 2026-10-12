@@ -7,7 +7,7 @@ function export_surf2rhino(n, m, structure, h_0, size_aper)
     y_size = -new_size/2: new_size/(m-1) :new_size/2;      
     [x, y] = meshgrid(x_size, y_size);                    
     aperture_new = [x(:), y(:)];
-
+    
     dist_beam = distance_Z(aperture_new, normals, h_0);
     
     if ismin
@@ -38,7 +38,6 @@ function export_surf2rhino(n, m, structure, h_0, size_aper)
             % fprintf(fid, "_SelCrv\n");
             % fprintf(fid, "-_Patch _PointSpacing=1  _USpans=40  _VSpans=40  _Stiffness=1  _AdjustTangency=Yes  _AutomaticTrim=Yes _EnterEnd\n");
             % fprintf(fid, "_Delete\n");
-
             fclose(fid);
         end
     end
