@@ -1,5 +1,6 @@
 function [z] = distance_Z(coords, normal, h0)
     normal_orth = get_orth(normal);
+    % cartesian coordi
     z = (normal_orth(:, 3).*h0' - normal_orth(:, 1)* coords(:, 1)' - normal_orth(:, 2)*coords(:, 2)')./normal_orth(:, 3);
     
     function [orth] = get_orth (matrix)
