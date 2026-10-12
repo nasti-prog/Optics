@@ -3,16 +3,17 @@ p0 = [0, 0, 1];
 l = 2000;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 200;                                                 
-ismin = false;                                              
+iter = 10;                                                 
+ismin = false;
+iscartesian = false;
 alpha = 10;
 %alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 flux = 1;
 
 size_aper = 5;
 size_disp = 3300;
-n_aper = 700;
-n_disp = 70;
+n_aper = 701;
+n_disp = 71;
 
 x_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
@@ -26,15 +27,17 @@ step = size_disp/(n_disp-1);
 u_square = -size_disp/2: step :size_disp/2;      
 v_square = -size_disp/2: step :size_disp/2;
 [U, V] = meshgrid(u_square, v_square);
-center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
-mask = V == center; 
+%center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
+mask = V == 0; 
 display = [U(mask), V(mask)];
 refr_beams = size(display, 1);
 
-replace_koeff = n2./(n1 .* sqrt(display(:, 1).^2 + display(:, 2).^2 + repmat(l, refr_beams, 1).^2) - n2.*l );
-p = replace_koeff .* display(:, 1);
-q = replace_koeff .* display(:, 2);
-display_replace = [p(:), q(:)];
+if iscartesian == false
+    replace_koeff = n2./(n1 .* sqrt(display(:, 1).^2 + display(:, 2).^2 + repmat(l, refr_beams, 1).^2) - n2.*l );
+    p = replace_koeff .* display(:, 1);
+    q = replace_koeff .* display(:, 2);
+    display = [p(:), q(:)];
+end
 
 energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
 
@@ -49,14 +52,19 @@ h_0 = 5*ones(1, refr_beams);
 %flux = sum(energy_req);
 %% Data
 energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);
-params = struct('aperture', aperture, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, ...
-    'ismin', ismin, 'size_aper', size_aper);
+params = struct('aperture', aperture, 'display', display, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, ...
+    'ismin', ismin, 'replace', iscartesian, 'size_aper', size_aper);
 %% Calculation
 [h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
+%% Reverse replacement
+%p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
+%p_0 = repmat(p0, refr_beams, 1);
+%params.normals = get_normal(n1, n2, p_0, p1);
 %% Export to Rhino
 %export_surf2rhino(n, m, params, h_0, size_aper)
 %% Save Project
-%save project_name, params, n1, n2, p_0, p1, h_0, mask, alpha,circle_mask,flux, inc_beams, refr_beams, l, n_aper, n_disp, size_disp, T, eff, x, y, u, v
+%save project_name, params, n1, n2, p_0, p1, h_0, mask, alpha,circle_mask,flux, inc_beams, refr_beams,
+%l, n_aper, n_disp, size_disp, T, eff, x, y, u, v 
 %% Visualising
 %visual(params, h_0, alpha);
 %% Functions

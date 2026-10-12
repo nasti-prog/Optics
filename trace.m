@@ -1,9 +1,15 @@
-function [energy_refr, dist_need, index_plane] = trace(aperture, normals, h_0, energy_inc, ismin)
+function [energy_refr, dist_need, index_plane] = trace(aperture, display, normals, h_0, energy_inc, ismin, iscartesian)
     
     energy_refr = zeros(1, size(h_0, 2));
     
-    dist_beam = distance_Z(aperture, normals, h_0);
-    
+    if iscartesian == false
+        % replace coordi 
+        dist_beam = distance_Z_replace(aperture, display, h_0);
+    else
+        % cartesian coordi
+        dist_beam = distance_Z(aperture, normals, h_0);
+    end
+
     if ismin
         [dist, index_plane] = min (dist_beam);
     else
