@@ -1,14 +1,14 @@
-function export_surf2rhino(n, m, structure, h_0, size_aper)
+function [dist] = export_surf2rhino(n, m, structure, h_0, size_aper)
     normals = structure.normals;
     ismin = structure.ismin;
     new_size = 1.03 * size_aper;
-   
+    
     x_size = -new_size/2: new_size/(n-1) :new_size/2;
     y_size = -new_size/2: new_size/(m-1) :new_size/2;      
     [x, y] = meshgrid(x_size, y_size);                    
     aperture_new = [x(:), y(:)];
     
-    dist_beam = distance_Z(aperture_new, normals, h_0);
+    dist_beam = distance_Z(aperture_new, normals, h_0);     %cartesian coordi
     
     if ismin
         [dist, ~] = min (dist_beam);
