@@ -1,4 +1,4 @@
-function [energy_refr, dist_need, index_plane] = trace(aperture, display, normals, h_0, energy_inc, ismin, iscartesian)
+function [energy_refr, dist, index_plane] = trace(aperture, display, normals, h_0, energy_inc, ismin, iscartesian)
     
     energy_refr = zeros(1, size(h_0, 2));
     
@@ -16,8 +16,8 @@ function [energy_refr, dist_need, index_plane] = trace(aperture, display, normal
         [dist, index_plane] = max (dist_beam);
     end
 
-    n = size(aperture, 1);
-    dist_need = reshape(dist, n, []);
+    % n = size(aperture, 1);
+    % dist_need = reshape(dist, n, []);
 
     %s = sqrt(length(dist));
     %dist_need = reshape(dist, s, s);

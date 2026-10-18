@@ -3,10 +3,11 @@ p0 = [0, 0, 1];
 l = 2000;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 10;                                                 
+iter = 42;                                                 
 ismin = false;
 iscartesian = false;
-alpha = 10;
+isfresnel = 0;
+alpha = 0.6;
 %alpha_max = ((u(length(u)) - u(1))/length(u)) / (max(energy_req)*length(x));
 flux = 1;
 
@@ -30,41 +31,43 @@ v_square = -size_disp/2: step :size_disp/2;
 %center = -size_disp/2 + (n_disp/2)* size_disp/(n_disp-1);
 mask = V == 0; 
 display = [U(mask), V(mask)];
+
 refr_beams = size(display, 1);
+energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
 
 if iscartesian == false
     replace_koeff = n2./(n1 .* sqrt(display(:, 1).^2 + display(:, 2).^2 + repmat(l, refr_beams, 1).^2) - n2.*l );
     p = replace_koeff .* display(:, 1);
     q = replace_koeff .* display(:, 2);
-    display = [p(:), q(:)];
+    display_replace = [p(:), q(:)];
 end
-
-energy_req = (1/refr_beams) .* (flux) .* ones(1, refr_beams);
 
 p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
 p_0 = repmat(p0, refr_beams, 1);
 normals = get_normal(n1, n2, p_0, p1);
 h_0 = 5*ones(1, refr_beams);
+convex_result = [];
+RRMSE_result = [];
 
 [max_angle_inc, max_angle_refr] = total_reflection(n1, p_0, normals);
 %% Fresnel
-%[energy_req, T, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals);
-%flux = sum(energy_req);
+if isfresnel == true
+    [energy_req, T, eff] = fresnel(energy_req, n1, n2, p_0, p1, normals);
+    flux = sum(energy_req);
+end
 %% Data
 energy_inc = (1/inc_beams) .* (flux) .* ones(1, inc_beams);
-params = struct('aperture', aperture, 'display', display, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, ...
+params = struct('aperture', aperture, 'display', display_replace, 'normals', normals, 'matr_inc', energy_inc, 'matr_req', energy_req, ...
     'ismin', ismin, 'replace', iscartesian, 'size_aper', size_aper);
 %% Calculation
-[h_0, alpha, ~] = update(params, h_0, alpha, iter, mask);
+[h_0, alpha, ~, dist, RRMSE_result, convex_result] = update(params, h_0, alpha, iter, mask, RRMSE_result, convex_result);
 %% Reverse replacement
-%p1 = [display(:, 1), display(:, 2), repmat(l, refr_beams, 1)];
-%p_0 = repmat(p0, refr_beams, 1);
-%params.normals = get_normal(n1, n2, p_0, p1);
+% ?????
 %% Export to Rhino
-%export_surf2rhino(n, m, params, h_0, size_aper)
+%export_surf2rhino(60, 60, params, h_0, size_aper);
 %% Save Project
-%save project_name, params, n1, n2, p_0, p1, h_0, mask, alpha,circle_mask,flux, inc_beams, refr_beams,
-%l, n_aper, n_disp, size_disp, T, eff, x, y, u, v 
+%save project_name, params, n1, n2, p_0, p1, h_0, mask, alpha,aper_circle_mask,flux, inc_beams, refr_beams,
+%l, n_aper, n_disp, size_disp, U(mask), V(mask), p(:), q(:)
 %% Visualising
 %visual(params, h_0, alpha);
 %% Functions
