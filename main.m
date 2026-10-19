@@ -3,7 +3,7 @@ p0 = [0, 0, 1];
 l = 2000;                                                   
 n1 = 1.493;
 n2 = 1;
-iter = 42;                                                 
+iter = 130;                                                 
 ismin = false;
 iscartesian = false;
 isfresnel = 0;
@@ -14,7 +14,7 @@ flux = 1;
 size_aper = 5;
 size_disp = 3300;
 n_aper = 701;
-n_disp = 71;
+n_disp = 151;
 
 x_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;
 y_square = -size_aper/2: size_aper/(n_aper-1) :size_aper/2;      
